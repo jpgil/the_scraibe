@@ -1,0 +1,26 @@
+
+[build-system]
+requires = ['setuptools', 'wheel']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'the_scrAIbe'
+version = '0.1.0'
+description = 'AI-assisted writing tool for teams using Markdown.'
+authors = [
+    {name = 'Juan Pablo', email = 'juanpablogil@gmail.com'}
+]
+license = {text = 'MIT'}
+dependencies = [
+    'fastapi',
+    'streamlit',
+    'pytest',
+    'pyyaml'
+]
+
+[tool.setuptools]
+packages = ['src', 'src.core']
+
+[project.scripts]
+scrAIbe = 'src.cli:main'
+
