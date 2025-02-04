@@ -20,6 +20,7 @@ dependencies = [
 
 [tool.setuptools]
 packages = ['src', 'src.core']
+#package-dir = {'' = ''}
 
 [project.scripts]
 scrAIbe = 'src.cli:main'

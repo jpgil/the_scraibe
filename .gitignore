@@ -1,10 +1,12 @@
 
 # Archivos y directorios a ignorar
-__pycache__/
+*__pycache__*
 *.pyc
 *.pyo
 .env
 .lock
+.pytest*
+*.egg-info
 logs/
 versions/
 
