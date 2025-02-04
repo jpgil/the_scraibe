@@ -28,7 +28,8 @@ def test_save_section_version():
 def test_get_version_history(sample_version):
     history = get_version_history(TEST_DOC, TEST_SECTION)
     assert len(history) > 0
-    assert sample_version in history
+    assert sample_version in [ f"versions/{h['filename']}.section_{TEST_SECTION}.{h['timestamp']}.{h['user']}.md" for h in history ]
+    # assert any([ os.path.basename(sample_version) == h['filename'] for h in history ])
 
 def test_rollback_section(sample_version):
     restored_content = rollback_section(TEST_DOC, TEST_SECTION, sample_version.split('.')[-3], TEST_USER)

@@ -1,11 +1,13 @@
-
 import argparse
 from src.core.locks import lock_section, is_section_locked, unlock_section
-from src.core.versioning import save_section_version, get_version_history, rollback_section
+from src.core.versioning import get_version_history, rollback_section
+from src.core.markdown_handler import load_and_label_document, list_sections, load_document, validate_markdown_syntax, save_section
+import sys
 
 def main():
     parser = argparse.ArgumentParser(description='the scrAIbe - AI-assisted document writing')
-    
+    parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
+
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
     # Lock Section
@@ -44,51 +46,114 @@ def main():
     parser_rollback.add_argument('timestamp', type=str, help='Timestamp of the version to rollback')
     parser_rollback.add_argument('user', type=str, help='User requesting rollback')
 
+    # Add a CLI command to process and label a document
+    parser_label = subparsers.add_parser('label-sections', help='Auto-label sections in a Markdown file')
+    parser_label.add_argument('filename', type=str, help='Document name')
+
+    # List sections
+    parser_list_sections = subparsers.add_parser('list-sections', help='List all sections in a Markdown file')
+    parser_list_sections.add_argument('filename', type=str, help='Document name')
+
+    # Validate Markdown Syntax
+    parser_validate = subparsers.add_parser('validate-syntax', help='Validate the syntax of a Markdown file')
+    parser_validate.add_argument('filename', type=str, help='Document name')
+
+    # Version History
+    parser_version_history = subparsers.add_parser('version-history', help='Show version history of a section')
+    parser_version_history.add_argument('filename', type=str, help='Document name')
+    parser_version_history.add_argument('section', type=str, help='Section ID')
+
+    def verbose_print(verbose, message):
+        if verbose:
+            print(message)
+
     args = parser.parse_args()
 
     if args.command == 'lock':
         success = lock_section(args.filename, args.section, args.user)
         if success:
-            print(f'Section {args.section} locked by {args.user}.')
+            verbose_print(args.verbose, f'Section {args.section} locked by {args.user}.')
         else:
             print(f'Error: Section {args.section} is already locked by another user.')
+            sys.exit(1)
 
     elif args.command == 'check-lock':
         locking_user = is_section_locked(args.filename, args.section)
         if locking_user:
             print(f'Section {args.section} is locked by {locking_user}.')
+            sys.exit(1)
         else:
             print(f'Section {args.section} is available.')
 
     elif args.command == 'unlock':
         success = unlock_section(args.filename, args.section, args.user)
         if success:
-            print(f'Section {args.section} unlocked by {args.user}.')
+            verbose_print(args.verbose, f'Section {args.section} unlocked by {args.user}.')
         else:
             print(f'Error: {args.user} does not have permission to unlock section {args.section}.')
+            sys.exit(1)
 
     elif args.command == 'save-section':
-        version_file = save_section_version(args.filename, args.section, args.user, args.content)
-        print(f'Section {args.section} saved as new version: {version_file}')
+        version_file = save_section(args.filename, args.section, args.user, args.content)
+        verbose_print(args.verbose, f'Section {args.section} saved as new version: {version_file}')
 
     elif args.command == 'list-versions':
         history = get_version_history(args.filename, args.section)
         if history:
-            print(f'Previous versions of section {args.section}:')
+            verbose_print(args.verbose, f'Previous versions of section {args.section}:')
             for version in history:
                 print(version)
         else:
-            print(f'No previous versions found for section {args.section}.')
+            verbose_print(args.verbose, f'No previous versions found for section {args.section}.')
 
     elif args.command == 'rollback-section':
         try:
             content = rollback_section(args.filename, args.section, args.timestamp, args.user)
             print(f'Section {args.section} rolled back to version {args.timestamp}.')
-            print('Content:')
-            print(content)
+            verbose_print(args.verbose, 'Content:')
+            verbose_print(args.verbose, content)
         except FileNotFoundError:
             print(f'Error: No version found for section {args.section} at {args.timestamp}.')
+            sys.exit(1)
+
+    elif args.command == 'label-sections':
+        labeled_content = load_and_label_document(args.filename)
+        verbose_print(args.verbose, f'Document {args.filename} has been labeled with section markers.')
+
+    elif args.command == 'list-sections':
+        try:
+            content = load_document(args.filename)
+            sections = list_sections(content)
+            verbose_print(args.verbose, f"Sections in {args.filename}:")
+            for section_id in sections:
+                print(f"{section_id}")
+        except FileNotFoundError as e:
+            print(str(e))
+            sys.exit(1)
+
+    elif args.command == 'validate-syntax':
+        try:
+            content = load_document(args.filename)
+            is_valid, message = validate_markdown_syntax(content)
+            if is_valid:
+                print(f'Syntax validation passed: {message}')
+            else:
+                print(f'Syntax validation failed: {message}')
+                sys.exit(1)
+        except FileNotFoundError as e:
+            print(str(e))
+            sys.exit(1)
+            
+    elif args.command == 'version-history':
+        history = get_version_history(args.filename, args.section)
+        if history:
+            verbose_print(args.verbose, f'Previous versions of section {args.section}:')
+            for version in history:
+                print(f"{version['timestamp']} by {version['user']}")
+        else:
+            verbose_print(args.verbose, f'No previous versions found for section {args.section}.')
 
 if __name__ == '__main__':
     main()
+
 

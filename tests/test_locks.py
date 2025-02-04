@@ -1,15 +1,16 @@
-
 import os
 import pytest
 import yaml
-from src.core.locks import lock_section, is_section_locked, unlock_section
+from src.core.locks import lock_section, is_section_locked, unlock_section, check_all_locks
 
 TEST_DOC = 'test_document.md'
 TEST_SECTION = '20250203153000_1'
+ANOTHER_SECTION = '20250203153000_2'
 TEST_USER = 'jgil'
 ANOTHER_USER = 'alice'
 
 LOCK_FILE = f'locks/{TEST_DOC}.section_{TEST_SECTION}.lock'
+ANOTHER_LOCK_FILE = f'locks/{TEST_DOC}.section_{ANOTHER_SECTION}.lock'
 
 ## 1 Lock the section
 def test_01_lock_section():
@@ -43,9 +44,28 @@ def test_05_unlock_section():
     assert unlock_section(TEST_DOC, TEST_SECTION, TEST_USER) == True
     assert not os.path.exists(LOCK_FILE)
 
+## 6 Check all locked sections for a document
+def test_06_check_all_locks():
+    """Step 6: Verify that check_all_locks correctly lists locked sections."""
+    # Lock multiple sections
+    assert lock_section(TEST_DOC, TEST_SECTION, TEST_USER) == True
+    assert lock_section(TEST_DOC, ANOTHER_SECTION, ANOTHER_USER) == True
+
+    locks = check_all_locks(TEST_DOC)
+    
+    assert locks == {
+        TEST_SECTION: TEST_USER,
+        ANOTHER_SECTION: ANOTHER_USER
+    }
+
+    # Cleanup
+    assert unlock_section(TEST_DOC, TEST_SECTION, TEST_USER) == True
+    assert unlock_section(TEST_DOC, ANOTHER_SECTION, ANOTHER_USER) == True
+
 # Clean up after all tests
 def teardown_module(module):
     """Cleans up any lock files after all tests."""
     if os.path.exists(LOCK_FILE):
         os.remove(LOCK_FILE)
-
+    if os.path.exists(ANOTHER_LOCK_FILE):
+        os.remove(ANOTHER_LOCK_FILE)
