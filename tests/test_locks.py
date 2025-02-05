@@ -10,8 +10,8 @@ ANOTHER_SECTION = '20250203153000_2'
 TEST_USER = 'jgil'
 ANOTHER_USER = 'alice'
 
-LOCK_FILE = f'locks/{TEST_DOC}.section_{TEST_SECTION}.lock'
-ANOTHER_LOCK_FILE = f'locks/{TEST_DOC}.section_{ANOTHER_SECTION}.lock'
+LOCK_FILE = f'locks/{TEST_DOC}/{TEST_DOC}.section_{TEST_SECTION}.lock'
+ANOTHER_LOCK_FILE = f'locks/{TEST_DOC}/{TEST_DOC}.section_{ANOTHER_SECTION}.lock'
 
 ## 1 Lock the section
 def test_01_lock_section():
