@@ -1,4 +1,4 @@
-
+import time
 import os
 import re
 import datetime
@@ -76,6 +76,15 @@ def save_section(filename: str, section_id: str, user: str, new_content: str):
     """Saves a new version of a section but prevents modification if it's locked by another user."""
 
     # Check if section is locked and by whom
+    # Wait at most 1s to unlock
+    locking_user = is_section_locked(filename, section_id)
+    TRIES = 10
+    while TRIES>0 and locking_user and locking_user != user:
+        TRIES -= 1
+        time.sleep(0.1)
+        print(f"Waiting for {locking_user} unlocking {filename} ... {TRIES}")
+        locking_user = is_section_locked(filename, section_id)
+    
     locking_user = is_section_locked(filename, section_id)
     if locking_user and locking_user != user:
         raise PermissionError(f"Error: Section {section_id} is locked by {locking_user}. Cannot save changes.")
@@ -121,9 +130,12 @@ def save_section(filename: str, section_id: str, user: str, new_content: str):
     
     updated_lines = previous_lines + new_content.strip().splitlines() + next_lines
 
+    # Save the version
+    version_filename = save_section_version(filename, section_id, user, new_content)
+
     # Save the modified document
     with open(filename, "w", encoding="utf-8") as f:
-        f.write("\n".join(updated_lines))
+        f.write("\n".join(updated_lines) + "\n")
         
     # Reload to see if it wrote ok
     reloaded_content = load_document(filename)
@@ -132,10 +144,8 @@ def save_section(filename: str, section_id: str, user: str, new_content: str):
         with open(filename, "w", encoding="utf-8") as f:
             f.write(doc_original)
         raise IOError(f"Error: Failed to write new content to section {section_id}.")
-    
-    save_section_version(filename, section_id, user, new_content)
 
-    return filename
+    return version_filename
 
         
         
@@ -253,7 +263,7 @@ def repair_markdown_syntax(content: str) -> str:
     if is_valid:
         return content  # No repair needed
 
-    print(f"Repairing document due to: {message}")
+    # print(f"Repairing document due to: {message}")
 
     lines = content.split("\n")
     new_content = []
@@ -316,7 +326,5 @@ def repair_markdown_syntax(content: str) -> str:
     is_valid, message = validate_markdown_syntax(repaired_content)
     if not is_valid:
         raise ValueError(f"Repair failed: {message}")
-
-    print("A punto de retornar...")
 
     return repaired_content

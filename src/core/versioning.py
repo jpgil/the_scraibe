@@ -2,21 +2,29 @@
 import os
 import glob
 import datetime
+import time
 import re
+
+import src.core as scraibe
 
 
 def save_section_version(filename: str, section_id: str, user: str, content: str):
-    """Saves a version of an edited section."""
+    """Saves a version of an edited section. Return version"""
     filename = os.path.basename(filename)
     timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     version_filename = f'versions/{filename}.section_{section_id}.{timestamp}.{user}.md'
-    
+
+    while os.path.exists(version_filename):
+        time.sleep(1)
+        timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        version_filename = f'versions/{filename}.section_{section_id}.{timestamp}.{user}.md'       
+       
     os.makedirs('versions', exist_ok=True)
 
     with open(version_filename, 'w', encoding='utf-8') as f:
         f.write(content)
     
-    return version_filename
+    return timestamp
 
 def get_all_versions(filename: str):
     """Returns a list of all versions of a file."""
@@ -46,12 +54,14 @@ def get_version_history(filename: str, section_id: str):
 
 def rollback_section(filename: str, section_id: str, timestamp: str, user: str):
     """Restores a previous version of a section."""
-    filename = os.path.basename(filename)
-    version_filename = f'versions/{filename}.section_{section_id}.{timestamp}.{user}.md'
-
+    original_content = scraibe.load_section(filename, section_id)    
+    version_filename = f'versions/{os.path.basename(filename)}.section_{section_id}.{timestamp}.{user}.md'
     if not os.path.exists(version_filename):
-        raise FileNotFoundError(f'No version found for section {section_id} at {timestamp}')
-    
+        raise FileNotFoundError(f'No version found for section {section_id} at {timestamp}')    
     with open(version_filename, 'r', encoding='utf-8') as f:
-        return f.read()
+        rollback_content = f.read()
 
+    if original_content.split() == rollback_content.split():
+        raise ValueError("The original content is the same as the rollback content.")   
+
+    return scraibe.save_section(filename, section_id, user, rollback_content)

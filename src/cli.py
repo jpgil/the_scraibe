@@ -1,7 +1,5 @@
 import argparse
-from src.core.locks import lock_section, is_section_locked, unlock_section
-from src.core.versioning import get_version_history, rollback_section
-from src.core.markdown_handler import load_and_label_document, list_sections, load_document, validate_markdown_syntax, save_section
+import src.core as scraibe
 import sys
 
 def main():
@@ -70,7 +68,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == 'lock':
-        success = lock_section(args.filename, args.section, args.user)
+        success = scraibe.lock_section(args.filename, args.section, args.user)
         if success:
             verbose_print(args.verbose, f'Section {args.section} locked by {args.user}.')
         else:
@@ -78,7 +76,7 @@ def main():
             sys.exit(1)
 
     elif args.command == 'check-lock':
-        locking_user = is_section_locked(args.filename, args.section)
+        locking_user = scraibe.is_section_locked(args.filename, args.section)
         if locking_user:
             print(f'Section {args.section} is locked by {locking_user}.')
             sys.exit(1)
@@ -86,7 +84,7 @@ def main():
             print(f'Section {args.section} is available.')
 
     elif args.command == 'unlock':
-        success = unlock_section(args.filename, args.section, args.user)
+        success = scraibe.unlock_section(args.filename, args.section, args.user)
         if success:
             verbose_print(args.verbose, f'Section {args.section} unlocked by {args.user}.')
         else:
@@ -94,21 +92,21 @@ def main():
             sys.exit(1)
 
     elif args.command == 'save-section':
-        version_file = save_section(args.filename, args.section, args.user, args.content)
+        version_file = scraibe.save_section(args.filename, args.section, args.user, args.content)
         verbose_print(args.verbose, f'Section {args.section} saved as new version: {version_file}')
 
     elif args.command == 'list-versions':
-        history = get_version_history(args.filename, args.section)
+        history = scraibe.get_version_history(args.filename, args.section)
         if history:
             verbose_print(args.verbose, f'Previous versions of section {args.section}:')
             for version in history:
-                print(version)
+                print(f"{version['timestamp']} {version['user']}")
         else:
             verbose_print(args.verbose, f'No previous versions found for section {args.section}.')
 
     elif args.command == 'rollback-section':
         try:
-            content = rollback_section(args.filename, args.section, args.timestamp, args.user)
+            content = scraibe.rollback_section(args.filename, args.section, args.timestamp, args.user)
             print(f'Section {args.section} rolled back to version {args.timestamp}.')
             verbose_print(args.verbose, 'Content:')
             verbose_print(args.verbose, content)
@@ -117,13 +115,13 @@ def main():
             sys.exit(1)
 
     elif args.command == 'label-sections':
-        labeled_content = load_and_label_document(args.filename)
+        labeled_content = scraibe.load_and_label_document(args.filename)
         verbose_print(args.verbose, f'Document {args.filename} has been labeled with section markers.')
 
     elif args.command == 'list-sections':
         try:
-            content = load_document(args.filename)
-            sections = list_sections(content)
+            content = scraibe.load_document(args.filename)
+            sections = scraibe.list_sections(content)
             verbose_print(args.verbose, f"Sections in {args.filename}:")
             for section_id in sections:
                 print(f"{section_id}")
@@ -133,8 +131,8 @@ def main():
 
     elif args.command == 'validate-syntax':
         try:
-            content = load_document(args.filename)
-            is_valid, message = validate_markdown_syntax(content)
+            content = scraibe.load_document(args.filename)
+            is_valid, message = scraibe.validate_markdown_syntax(content)
             if is_valid:
                 print(f'Syntax validation passed: {message}')
             else:
@@ -145,7 +143,7 @@ def main():
             sys.exit(1)
             
     elif args.command == 'version-history':
-        history = get_version_history(args.filename, args.section)
+        history = scraibe.get_version_history(args.filename, args.section)
         if history:
             verbose_print(args.verbose, f'Previous versions of section {args.section}:')
             for version in history:

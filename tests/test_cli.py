@@ -1,50 +1,159 @@
+import os
+import re
 import subprocess
+import pytest
+import src.core as scraibe
+import time
 
-TEST_DOC = 'test_document.md'
-TEST_SECTION = '20250203153000_1'
-TEST_USER = 'jgil'
-ANOTHER_USER = 'alice'
+TEST_DOC = "documents/test_document.md"
+ANOTHER_SECTION = "20250203153000_2"
+TEST_USER = "gammow"
+ANOTHER_USER = "alice"
+REVIEW_USER = "bob"
+VERSION_TIMESTAMP = "20250204120000"
 
-def test_01_lock_section():
-    """Step 1: Lock a section from CLI."""
-    result = subprocess.run(['python', 'src/cli.py', '--verbose', 'lock', TEST_DOC, TEST_SECTION, TEST_USER], capture_output=True, text=True)
-    assert f'Section {TEST_SECTION} locked by {TEST_USER}.' in result.stdout
+@pytest.fixture(scope="module", autouse=True)
+def setup_and_cleanup():
+    """Ensures the test document is created and cleaned up."""
+    # time.sleep(0.1)
+    os.makedirs("documents", exist_ok=True)
+    os.makedirs("versions", exist_ok=True)
+    
+    content = "# Test Document\n\nThis is a test."
+    content = scraibe.add_section_markers(content)
 
-def test_02_check_section_locked():
-    """Step 2: Verify section is locked."""
-    result = subprocess.run(['python', 'src/cli.py', '--verbose', 'check-lock', TEST_DOC, TEST_SECTION], capture_output=True, text=True)
-    assert f'Section {TEST_SECTION} is locked by {TEST_USER}.' in result.stdout
+    with open(TEST_DOC, "w", encoding="utf-8") as f:
+        f.write(content)
+    yield
 
-def test_03_lock_section_already_locked():
-    """Step 3: Attempt to lock the section with another user."""
-    result = subprocess.run(['python', 'src/cli.py', '--verbose', 'lock', TEST_DOC, TEST_SECTION, ANOTHER_USER], capture_output=True, text=True)
-    assert f'Error: Section {TEST_SECTION} is already locked by another user.' in result.stdout
+    if os.path.exists(TEST_DOC):
+        os.remove(TEST_DOC)
+    # Remove versions
+    version_files = [f for f in os.listdir('versions') if f.startswith(f"{os.path.basename(TEST_DOC)}.section_")]
+    for vf in version_files:
+        os.remove(os.path.join('versions', vf))
+    # Remove locks
+    lock_files = [f for f in os.listdir('locks') if f.startswith(f"{os.path.basename(TEST_DOC)}.section_")]
+    for lf in lock_files:
+        os.remove(os.path.join('locks', lf))
+    
 
-def test_04_unlock_section_wrong_user():
-    """Step 4: Attempt to unlock with a different user."""
-    result = subprocess.run(['python', 'src/cli.py', '--verbose', 'unlock', TEST_DOC, TEST_SECTION, ANOTHER_USER], capture_output=True, text=True)
-    assert f'Error: {ANOTHER_USER} does not have permission to unlock section {TEST_SECTION}.' in result.stdout
 
-def test_05_unlock_section_correct_user():
-    """Step 5: Unlock with the correct user."""
-    result = subprocess.run(['python', 'src/cli.py', '--verbose', 'unlock', TEST_DOC, TEST_SECTION, TEST_USER], capture_output=True, text=True)
-    assert f'Section {TEST_SECTION} unlocked by {TEST_USER}.' in result.stdout
+# 01. Basic Workflow: Label Sections
+def test_01_label_sections():
+    result = subprocess.run(["python", "src/cli.py", "-v", "label-sections", TEST_DOC], capture_output=True, text=True)
+    assert "has been labeled" in result.stdout
 
-def test_06_save_section():
-    """Step 6: Save a new version of a section."""
-    result = subprocess.run(['python', 'src/cli.py', '--verbose', 'save-section', TEST_DOC, TEST_SECTION, TEST_USER, 'New version content.'], capture_output=True, text=True)
-    assert 'Section 20250203153000_1 saved as new version' in result.stdout
 
-def test_07_list_versions():
-    """Step 7: List previous versions of a section."""
-    result = subprocess.run(['python', 'src/cli.py', '--verbose', 'list-versions', TEST_DOC, TEST_SECTION], capture_output=True, text=True)
-    assert 'Previous versions of section 20250203153000_1' in result.stdout
+# 02. Lock, Edit, and Unlock a Section
+def test_02_lock_edit_unlock_section():
+    section = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
 
-def test_08_rollback_section():
-    """Step 8: Rollback to a previous version."""
-    list_versions = subprocess.run(['python', 'src/cli.py', '--verbose', 'list-versions', TEST_DOC, TEST_SECTION], capture_output=True, text=True)
-    list_versions_lines = list_versions.stdout.splitlines()
-    penultimate = list_versions_lines[-2]
-    version_timestamp = penultimate.split(".")[3]
-    result = subprocess.run(['python', 'src/cli.py', '--verbose', 'rollback-section', TEST_DOC, TEST_SECTION, version_timestamp, TEST_USER], capture_output=True, text=True)
-    assert f'Section {TEST_SECTION} rolled back to version {version_timestamp}' in result.stdout
+    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section, TEST_USER], check=True)
+    lock_status = subprocess.run(["python", "src/cli.py", "-v", "check-lock", TEST_DOC, section], capture_output=True, text=True)
+    assert TEST_USER in lock_status.stdout
+
+    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section, TEST_USER], check=True)
+
+
+# 03. Prevent Concurrent Editing
+def test_03_prevent_concurrent_editing():
+    section = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
+
+    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section, TEST_USER], check=True)
+    result = subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section, ANOTHER_USER], capture_output=True, text=True)
+    assert "is already locked" in result.stdout
+
+    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section, TEST_USER], check=True)
+
+
+# 04. Save a New Version of a Section
+def test_04_save_new_version():
+    section = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
+
+    subprocess.run(["python", "src/cli.py", "-v", "save-section", TEST_DOC, section, TEST_USER, "Updated content here."], check=True)
+    result = subprocess.run(["python", "src/cli.py", "-v", "list-versions", TEST_DOC, section], capture_output=True, text=True)
+    assert "Previous versions of section" in result.stdout
+
+
+# 05. Rollback to a Previous Version
+def test_05_rollback_section():
+    section = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
+    timestamp = scraibe.save_section(TEST_DOC, section, "user1", "content1")
+
+    scraibe.save_section(TEST_DOC, section, "user2", "content2")
+    scraibe.save_section(TEST_DOC, section, "user3", "content3")
+
+    result = subprocess.run(["python", "src/cli.py", "-v", "rollback-section", TEST_DOC, section, timestamp, "user1"], capture_output=True, text=True)
+    assert "rolled back to version" in result.stdout
+
+
+# 06. Full Editing Workflow
+def test_06_full_editing_workflow():
+    section = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
+
+    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section, TEST_USER], check=True)
+    subprocess.run(["python", "src/cli.py", "-v", "save-section", TEST_DOC, section, TEST_USER, "This is a revised version."], check=True)
+    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section, TEST_USER], check=True)
+
+    result = subprocess.run(["python", "src/cli.py", "-v", "list-versions", TEST_DOC, section], capture_output=True, text=True)
+    assert "Previous versions of section" in result.stdout
+
+
+# 07. Multi-User Collaboration Workflow
+def test_07_multi_user_collaboration():
+    section = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
+    
+    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section, ANOTHER_USER], check=True)
+    alice_version = subprocess.run(["python", "src/cli.py", "-v", "save-section", TEST_DOC, section, ANOTHER_USER, "Alice's contribution."], capture_output=True, text=True).stdout.strip().split()[-1]
+    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section, ANOTHER_USER], check=True)
+
+    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section, REVIEW_USER], check=True)
+    bob_version = subprocess.run(["python", "src/cli.py", "-v", "save-section", TEST_DOC, section, REVIEW_USER, "Bob reviewed and improved."], capture_output=True, text=True).stdout.strip().split()[-1]
+    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section, REVIEW_USER], check=True)
+
+    result = subprocess.run(["python", "src/cli.py", "-v", "list-versions", TEST_DOC, section], capture_output=True, text=True).stdout
+    assert alice_version in result
+    assert bob_version in result
+
+
+# 08. Resolving an Editing Conflict
+def test_08_resolving_editing_conflict():
+    section = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
+
+    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section, ANOTHER_USER], check=True)
+
+    result = subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section, REVIEW_USER], capture_output=True, text=True)
+    assert f"{REVIEW_USER} does not have permission" in result.stdout
+
+
+# 09. Reverting a Section to Its Original State
+def test_09_revert_to_original_state():
+    section = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
+
+    result = subprocess.run(["python", "src/cli.py", "list-versions", TEST_DOC, section], capture_output=True, text=True)
+    first_version = result.stdout.strip().split("\n")[0].split()[0]
+    print(first_version)
+
+    rollback_result = subprocess.run(["python", "src/cli.py", "-v", "rollback-section", TEST_DOC, section, first_version, TEST_USER], capture_output=True, text=True)
+    assert "Section restored" in rollback_result.stdout
+
+
+# 10. Bulk Operations Workflow
+def test_10_bulk_operations():
+    section = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
+
+    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section, TEST_USER], check=True)
+    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, ANOTHER_SECTION, TEST_USER], check=True)
+
+    subprocess.run(["python", "src/cli.py", "-v", "save-section", TEST_DOC, section, TEST_USER, "Updated Section 1"], check=True)
+    subprocess.run(["python", "src/cli.py", "-v", "save-section", TEST_DOC, ANOTHER_SECTION, TEST_USER, "Updated Section 2"], check=True)
+
+    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section, TEST_USER], check=True)
+    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, ANOTHER_SECTION, TEST_USER], check=True)
+
+    result = subprocess.run(["python", "src/cli.py", "-v", "list-versions", TEST_DOC, section], capture_output=True, text=True)
+    assert "Updated Section 1" in result.stdout
+
+    result = subprocess.run(["python", "src/cli.py", "-v", "list-versions", TEST_DOC, ANOTHER_SECTION], capture_output=True, text=True)
+    assert "Updated Section 2" in result.stdout

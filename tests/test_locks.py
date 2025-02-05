@@ -1,6 +1,7 @@
 import os
 import pytest
 import yaml
+import src.core as scraibe
 from src.core.locks import lock_section, is_section_locked, unlock_section, check_all_locks
 
 TEST_DOC = 'test_document.md'
@@ -15,7 +16,7 @@ ANOTHER_LOCK_FILE = f'locks/{TEST_DOC}.section_{ANOTHER_SECTION}.lock'
 ## 1 Lock the section
 def test_01_lock_section():
     """Step 1: Lock a section and verify it is locked."""
-    assert lock_section(TEST_DOC, TEST_SECTION, TEST_USER) == True
+    assert scraibe.lock_section(TEST_DOC, TEST_SECTION, TEST_USER) == True
     assert os.path.exists(LOCK_FILE)
 
     with open(LOCK_FILE, 'r', encoding='utf-8') as f:
@@ -30,7 +31,7 @@ def test_02_is_section_locked():
 ## 3 Try locking the same section with another user
 def test_03_lock_section_already_locked():
     """Step 3: Another user should NOT be able to lock the section."""
-    assert lock_section(TEST_DOC, TEST_SECTION, ANOTHER_USER) == False
+    assert scraibe.lock_section(TEST_DOC, TEST_SECTION, ANOTHER_USER) == False
 
 ## 4 Try unlocking with the wrong user
 def test_04_unlock_section_wrong_user():
@@ -48,8 +49,8 @@ def test_05_unlock_section():
 def test_06_check_all_locks():
     """Step 6: Verify that check_all_locks correctly lists locked sections."""
     # Lock multiple sections
-    assert lock_section(TEST_DOC, TEST_SECTION, TEST_USER) == True
-    assert lock_section(TEST_DOC, ANOTHER_SECTION, ANOTHER_USER) == True
+    assert scraibe.lock_section(TEST_DOC, TEST_SECTION, TEST_USER) == True
+    assert scraibe.lock_section(TEST_DOC, ANOTHER_SECTION, ANOTHER_USER) == True
 
     locks = check_all_locks(TEST_DOC)
     
