@@ -2,83 +2,86 @@ import pytest
 from src.core.markdown_handler import repair_markdown_syntax, validate_markdown_syntax
 
 @pytest.mark.parametrize("broken_markdown, expected_fixed, should_repair, should_fail", [
-    # ✅ Valid document should remain unchanged
+    # Valid document should remain unchanged
     ("""
->>>>>ID#20250203153000_1
-# Introducción
-Texto en la sección.
-<<<<<ID#20250203153000_1
->>>>>ID#20250203153000_2
-## Segunda Sección
-Más texto aquí.
-<<<<<ID#20250203153000_2
+>>>>>ID#20250205013016_1
+# Introduction
+Text in the section.
+<<<<<ID#20250205013016_1
+>>>>>ID#20250205013016_2
+## Second Section
+More text here.
+<<<<<ID#20250205013016_2
 """, """
->>>>>ID#20250203153000_1
-# Introducción
-Texto en la sección.
-<<<<<ID#20250203153000_1
->>>>>ID#20250203153000_2
-## Segunda Sección
-Más texto aquí.
-<<<<<ID#20250203153000_2
+>>>>>ID#20250205013016_1
+# Introduction
+Text in the section.
+<<<<<ID#20250205013016_1
+>>>>>ID#20250205013016_2
+## Second Section
+More text here.
+<<<<<ID#20250205013016_2
 """, False, False),  # No repair needed, no failure expected
 
-    # ❌ Unclosed section → Should be auto-closed
+    # Unclosed section → Should be auto-closed
     ("""
->>>>>ID#20250203153000_1
-# Sección sin cierre
-Texto sin cierre de sección.
+>>>>>ID#20250205013016_1
+# Unclosed section
+Text without section closure.
 """, """
->>>>>ID#20250203153000_1
-# Sección sin cierre
-Texto sin cierre de sección.
-<<<<<ID#20250203153000_1
+>>>>>ID#20250205013016_1
+# Unclosed section
+Text without section closure.
+
+
+<<<<<ID#20250205013016_1
 """, True, False),  # Repair needed, no failure
 
-    # ❌ Nested section markers → Should be split into separate sections
+    # Nested section markers → Should be split into separate sections
     ("""
->>>>>ID#20250203153000_1
-# Sección principal
->>>>>ID#20250203153000_2
-## Sección anidada
-Texto en una sección anidada.
-<<<<<ID#20250203153000_2
-<<<<<ID#20250203153000_1
+>>>>>ID#20250205013016_1
+# Main section
+>>>>>ID#20250205013016_2
+## Nested section
+Text in a nested section.
+<<<<<ID#20250205013016_2
+<<<<<ID#20250205013016_1
 """, """
->>>>>ID#20250203153000_1
-# Sección principal
-<<<<<ID#20250203153000_1
->>>>>ID#20250203153000_2
-## Sección anidada
-Texto en una sección anidada.
-<<<<<ID#20250203153000_2
+>>>>>ID#20250205013016_1
+# Main section
+<<<<<ID#20250205013016_1
+>>>>>ID#20250205013016_2
+## Nested section
+Text in a nested section.
+<<<<<ID#20250205013016_2
 """, True, True),  # Repair needed, fails!
 
-    # ❌ Heading outside of a section → Should be wrapped in a new section
+    # Heading outside of a section → Should be wrapped in a new section
     ("""
-# Título fuera de sección
-Texto fuera de una sección.
+# Heading outside of section
+Text outside of a section.
 """, """
->>>>>ID#20250203153000_1
-# Título fuera de sección
-Texto fuera de una sección.
-<<<<<ID#20250203153000_1
+>>>>>ID#20250205013016_1
+# Heading outside of section
+Text outside of a section.
+
+
+<<<<<ID#20250205013016_1
 """, True, False),  # Repair needed, no failure
 
-    # ❌ Mismatched section IDs → Should correct IDs
+    # Mismatched section IDs → Should correct IDs
     ("""
->>>>>ID#20250203153000_1
-# Sección con ID incorrecto
-Texto con error de cierre de sección.
-<<<<<ID#20250203153000_2
+>>>>>ID#20250205013016_1
+# Section with incorrect ID
+Text with section closure error.
+<<<<<ID#20250205013016_2
 """, """
->>>>>ID#20250203153000_1
-# Sección con ID incorrecto
-Texto con error de cierre de sección.
-<<<<<ID#20250203153000_1
+>>>>>ID#20250205013016_1
+# Section with incorrect ID
+Text with section closure error.
+<<<<<ID#20250205013016_1
 """, True, True)  # Repair needed, fails!
 ])
-
 
 
 def test_repair_markdown_syntax(broken_markdown, expected_fixed, should_repair, should_fail):
@@ -92,12 +95,12 @@ def test_repair_markdown_syntax(broken_markdown, expected_fixed, should_repair, 
         assert "Repair failed" in str(excinfo.value)
     else:
         # Otherwise, attempt repair
-        repaired_content = f"\n{repair_markdown_syntax(broken_markdown)}"
+        repaired_content = f"{repair_markdown_syntax(broken_markdown, force_timestamp='20250205013016')}"
         is_valid_after, _ = validate_markdown_syntax(repaired_content)
         
         if should_repair:
             print()
-            print(f"Repaired:\n'{repaired_content}'\n\nTo:'{expected_fixed}'")
+            print(f"Repaired:\n'{repaired_content.strip()}'\nexpected_fixed:\n'{expected_fixed.strip()}'")
             assert repaired_content.strip() == expected_fixed.strip()
             assert is_valid_after
         else:

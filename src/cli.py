@@ -8,34 +8,33 @@ def main():
 
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
-    # Lock Section
-    parser_lock = subparsers.add_parser('lock', help='Lock a section for editing')
-    parser_lock.add_argument('filename', type=str, help='Document name')
-    parser_lock.add_argument('section', type=str, help='Section ID')
-    parser_lock.add_argument('user', type=str, help='User who locks the section')
+    # Add labels
+    parser_add_labels = subparsers.add_parser('add-labels', help='Add ID labels to a document')
+    parser_add_labels.add_argument('filename', type=str, help='Document name')
 
     # Check Lock Status
     parser_check = subparsers.add_parser('check-lock', help='Check if a section is locked')
     parser_check.add_argument('filename', type=str, help='Document name')
     parser_check.add_argument('section', type=str, help='Section ID')
 
-    # Unlock Section
-    parser_unlock = subparsers.add_parser('unlock', help='Unlock a section after editing')
-    parser_unlock.add_argument('filename', type=str, help='Document name')
-    parser_unlock.add_argument('section', type=str, help='Section ID')
-    parser_unlock.add_argument('user', type=str, help='User unlocking the section')
+    # Label Sections
+    parser_label = subparsers.add_parser('label-sections', help='Auto-label sections in a Markdown file')
+    parser_label.add_argument('filename', type=str, help='Document name')
 
-    # Save Section Version
-    parser_save = subparsers.add_parser('save-section', help='Save a version of a section')
-    parser_save.add_argument('filename', type=str, help='Document name')
-    parser_save.add_argument('section', type=str, help='Section ID')
-    parser_save.add_argument('user', type=str, help='User saving the section')
-    parser_save.add_argument('content', type=str, help='New content of the section')
+    # List Sections
+    parser_list_sections = subparsers.add_parser('list-sections', help='List all sections in a Markdown file')
+    parser_list_sections.add_argument('filename', type=str, help='Document name')
 
     # List Section Versions
     parser_list_versions = subparsers.add_parser('list-versions', help='List previous versions of a section')
     parser_list_versions.add_argument('filename', type=str, help='Document name')
     parser_list_versions.add_argument('section', type=str, help='Section ID')
+
+    # Lock Section
+    parser_lock = subparsers.add_parser('lock', help='Lock a section for editing')
+    parser_lock.add_argument('filename', type=str, help='Document name')
+    parser_lock.add_argument('section', type=str, help='Section ID')
+    parser_lock.add_argument('user', type=str, help='User who locks the section')
 
     # Rollback Section
     parser_rollback = subparsers.add_parser('rollback-section', help='Rollback to a previous version of a section')
@@ -44,13 +43,18 @@ def main():
     parser_rollback.add_argument('timestamp', type=str, help='Timestamp of the version to rollback')
     parser_rollback.add_argument('user', type=str, help='User requesting rollback')
 
-    # Add a CLI command to process and label a document
-    parser_label = subparsers.add_parser('label-sections', help='Auto-label sections in a Markdown file')
-    parser_label.add_argument('filename', type=str, help='Document name')
+    # Save Section Version
+    parser_save = subparsers.add_parser('save-section', help='Save a version of a section')
+    parser_save.add_argument('filename', type=str, help='Document name')
+    parser_save.add_argument('section', type=str, help='Section ID')
+    parser_save.add_argument('user', type=str, help='User saving the section')
+    parser_save.add_argument('content', type=str, help='New content of the section')
 
-    # List sections
-    parser_list_sections = subparsers.add_parser('list-sections', help='List all sections in a Markdown file')
-    parser_list_sections.add_argument('filename', type=str, help='Document name')
+    # Unlock Section
+    parser_unlock = subparsers.add_parser('unlock', help='Unlock a section after editing')
+    parser_unlock.add_argument('filename', type=str, help='Document name')
+    parser_unlock.add_argument('section', type=str, help='Section ID')
+    parser_unlock.add_argument('user', type=str, help='User unlocking the section')
 
     # Validate Markdown Syntax
     parser_validate = subparsers.add_parser('validate-syntax', help='Validate the syntax of a Markdown file')
@@ -151,6 +155,17 @@ def main():
                 print(f"{version['timestamp']} by {version['user']}")
         else:
             verbose_print(args.verbose, f'No previous versions found for section {args.section}.')
+
+    elif args.command == 'add-labels':
+        content = scraibe.load_document(args.filename)
+        lbl1 = scraibe.add_section_markers(content)
+        lbl1 = scraibe.repair_markdown_syntax(lbl1)
+        valid, msg = scraibe.validate_markdown_syntax(lbl1)
+        if not valid:
+            print(msg)
+            raise(f"The document {args.filename} has bad sintaxis, fix it manually")
+        result = scraibe.save_document(args.filename, lbl1)
+        verbose_print(args.verbose, f"Document {args.filename} labelled.")
 
 if __name__ == '__main__':
     main()

@@ -177,7 +177,7 @@ def add_section_markers(content: str) -> str:
         if re.match(r"^\s*#+\s", line) and not inside_existing_section:
             # If there's an open section, close it before starting a new one
             if current_section_id:
-                new_content.append(f"<<<<<ID#{current_section_id}")
+                new_content.append(f"\n<<<<<ID#{current_section_id}")
 
             # Generate new section ID
             current_section_id = generate_section_id(section_index)
@@ -255,15 +255,103 @@ def validate_markdown_syntax(content: str) -> bool:
     return True, "Markdown syntax is valid."
 
 
+import re
+import datetime
 
-def repair_markdown_syntax(content: str) -> str:
+# def repair_markdown_syntax(content: str) -> str:
+#     """Fix incorrect Markdown section syntax, ensuring that each heading starts a new section."""
+    
+#     # Pre-check: Validate before repairing
+#     is_valid, message = validate_markdown_syntax(content)
+#     if is_valid:
+#         return content  # No repair needed
+
+#     lines = content.split("\n")
+#     new_content = []
+#     open_sections = set()
+#     section_id_counter = 1
+#     last_section_id = None
+#     inside_section = False
+
+#     for i, line in enumerate(lines):
+#         # Detect section opening
+#         match_open = re.match(r"^>>>>>ID#(\d+_\d+)$", line.strip())
+#         if match_open:
+#             section_id = match_open.group(1)
+#             if inside_section:
+#                 new_content.append(f"<<<<<ID#{last_section_id}")  # Close previous section
+#             open_sections.add(section_id)
+#             last_section_id = section_id
+#             inside_section = True
+#             new_content.append(line)
+#             continue
+
+#         # Detect section closing
+#         match_close = re.match(r"^<<<<<ID#(\d+_\d+)$", line.strip())
+#         if match_close:
+#             section_id = match_close.group(1)
+#             if section_id in open_sections:
+#                 open_sections.remove(section_id)
+#             inside_section = False
+#             last_section_id = None
+#             new_content.append(line)
+#             continue
+
+#         # Detect a new heading (`#`, `##`, `###`, etc.)
+#         if re.match(r"^\s*#+\s", line):
+#             if inside_section:
+#                 new_content.append(f"<<<<<ID#{last_section_id}")  # Close the previous section
+            
+#             # Generate a unique timestamp-based section ID
+#             timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+#             new_section_id = f'{timestamp}_{section_id_counter}'
+#             section_id_counter += 1
+#             open_sections.add(new_section_id)
+#             last_section_id = new_section_id
+#             inside_section = True
+            
+#             new_content.append(f">>>>>ID#{new_section_id}")
+#             new_content.append(line)
+#             continue
+
+#         new_content.append(line)
+
+#     # Ensure all open sections are closed
+#     if inside_section and last_section_id:
+#         new_content.append(f"<<<<<ID#{last_section_id}")
+
+#     # Explicitly close any unclosed sections at the end of the document
+#     for open_section in list(open_sections):
+#         new_content.append(f"<<<<<ID#{open_section}")
+#         open_sections.remove(open_section)
+
+#     repaired_content = "\n".join(new_content)
+#     repaired_content = repaired_content.replace("\n<<<<<ID#", "<<<<<ID#").strip()
+#     repaired_content += "\n"
+
+#     # Post-check: Validate after repairing
+#     is_valid, message = validate_markdown_syntax(repaired_content)
+#     if not is_valid:
+#         raise ValueError(f"Repair failed: {message}")
+
+#     return repaired_content
+
+
+
+
+def repair_markdown_syntax(content: str, force_timestamp=False) -> str:
     """Attempts to fix incorrect Markdown section syntax."""
-    # Pre-check: Validate before repairing
-    is_valid, message = validate_markdown_syntax(content)
-    if is_valid:
-        return content  # No repair needed
+    # # Pre-check: Validate before repairing
+    # is_valid, message = validate_markdown_syntax(content)
+    # if is_valid:
+    #     return content  # No repair needed
 
     # print(f"Repairing document due to: {message}")
+
+    if force_timestamp:
+        timestamp = force_timestamp
+    else:
+        timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
     lines = content.split("\n")
     new_content = []
@@ -278,7 +366,7 @@ def repair_markdown_syntax(content: str) -> str:
         if match_open:
             section_id = match_open.group(1)
             if inside_section:
-                new_content.append(f"<<<<<ID#{last_section_id}")  # Close previous section
+                new_content.append(f"\n<<<<<ID#{last_section_id}")  # Close previous section
             open_sections.add(section_id)
             last_section_id = section_id
             inside_section = True
@@ -299,10 +387,10 @@ def repair_markdown_syntax(content: str) -> str:
         # Detect heading outside of a section
         if re.match(r"^\s*#+\s", line) and not inside_section:
             if last_section_id:
-                new_content.append(f"<<<<<ID#{last_section_id}")  # Close previous section
+                new_content.append(f"\n<<<<<ID#{last_section_id}")  # Close previous section
             
             # Create a new section ID
-            new_section_id = f"20250203153000_{section_id_counter}"
+            new_section_id = f'{timestamp}_{section_id_counter}'
             section_id_counter += 1
             open_sections.add(new_section_id)
             last_section_id = new_section_id
@@ -316,11 +404,13 @@ def repair_markdown_syntax(content: str) -> str:
 
     # Ensure all open sections are closed
     if inside_section and last_section_id:
-        new_content.append(f"<<<<<ID#{last_section_id}")
+        new_content.append(f"\n<<<<<ID#{last_section_id}")
 
     repaired_content = "\n".join(new_content)
-    repaired_content = repaired_content.replace("\n<<<<<ID#", "<<<<<ID#").strip()
-    repaired_content += "\n"
+    # repaired_content = repaired_content.replace("\n<<<<<ID#", "<<<<<ID#").strip()
+    # repaired_content += "\n"
+    
+    repaired_content = add_missing_section_labels(repaired_content, force_timestamp)
 
     # Post-check: Validate after repairing
     is_valid, message = validate_markdown_syntax(repaired_content)
@@ -328,3 +418,69 @@ def repair_markdown_syntax(content: str) -> str:
         raise ValueError(f"Repair failed: {message}")
 
     return repaired_content
+
+
+def _ID_index(txt, section_lines):
+    testlist = [x for x in section_lines if txt in x]
+    if len(testlist) != 1:
+        raise ValueError(f"Repair failed because invalid markdown: {testlist}")
+    return section_lines.index(testlist[0])
+
+def add_missing_section_labels(content: str, force_timestamp=False) -> str:
+    """Adds missing section markers to a partially labeled Markdown document."""
+
+    if force_timestamp:
+        timestamp = force_timestamp
+    else:
+        timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+
+    lines = content.strip().split("\n")
+    new_content = []
+    section_id_counter = 1
+    
+    sections = []
+    section_lines = []
+
+    # First, iterate to extract possible sections
+    for i, line in enumerate(lines):
+        section_lines.append(line)
+        if re.match(r"^<<<<<ID#(\d+_\d+)$", line.strip()):
+            # End of section
+            sections.append(section_lines)
+            section_lines = []
+    if len(section_lines):
+        sections.append(section_lines)
+
+    # Check titles inside                    
+    for section_lines in sections:
+        ID_opening = _ID_index(">>>>>ID#", section_lines)
+        ID_closing = _ID_index("<<<<<ID#", section_lines)
+        # print(f"{ID_opening} - {ID_closing}")
+
+        # ['### Original subsection 1.1', '### Original subsection 2.1']
+        titles = [x for x in section_lines if x.startswith("#")]
+        if len(titles) > 1:
+            new_section_lines = section_lines[0:section_lines.index(titles[1])] + [section_lines[ID_closing]]
+            # print(new_section_lines)
+            new_section_index = titles[1:]+[section_lines[ID_closing]]
+            for i in range(len(new_section_index)-1):
+                start = section_lines.index(new_section_index[i])
+                stop  = section_lines.index(new_section_index[i+1])                
+                # print(f"..... working with {section_lines[start:stop]}")
+                
+                new_section_id = f"{timestamp}_{section_id_counter}"
+                section_id_counter += 1
+
+                new_section_lines += [f">>>>>ID#{new_section_id}"]
+                new_section_lines += section_lines[start:stop]
+                new_section_lines += [f"<<<<<ID#{new_section_id}"]
+                
+            new_content += new_section_lines
+        else:
+            new_content += section_lines
+
+    # print("GRAND FINALE _________________")
+    # print("\n".join(new_content))
+    # print("..... tamos")
+    
+    return "\n".join(new_content)
