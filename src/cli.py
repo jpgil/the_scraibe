@@ -92,8 +92,9 @@ def main():
             sys.exit(1)
 
     elif args.command == 'save-section':
-        version_file = scraibe.save_section(args.filename, args.section, args.user, args.content)
-        verbose_print(args.verbose, f'Section {args.section} saved as new version: {version_file}')
+        version = scraibe.save_section(args.filename, args.section, args.user, args.content)
+        verbose_print(args.verbose, f'Section {args.section} saved as new version:')
+        print(version)
 
     elif args.command == 'list-versions':
         history = scraibe.get_version_history(args.filename, args.section)

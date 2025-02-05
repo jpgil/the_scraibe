@@ -6,11 +6,9 @@ import src.core as scraibe
 import time
 
 TEST_DOC = "documents/test_document.md"
-ANOTHER_SECTION = "20250203153000_2"
 TEST_USER = "gammow"
 ANOTHER_USER = "alice"
 REVIEW_USER = "bob"
-VERSION_TIMESTAMP = "20250204120000"
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_and_cleanup():
@@ -19,7 +17,7 @@ def setup_and_cleanup():
     os.makedirs("documents", exist_ok=True)
     os.makedirs("versions", exist_ok=True)
     
-    content = "# Test Document\n\nThis is a test."
+    content = "# Test Document\n\nThis is a test.\n\n## Section\n\n##Another one"
     content = scraibe.add_section_markers(content)
 
     with open(TEST_DOC, "w", encoding="utf-8") as f:
@@ -126,6 +124,8 @@ def test_08_resolving_editing_conflict():
     result = subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section, REVIEW_USER], capture_output=True, text=True)
     assert f"{REVIEW_USER} does not have permission" in result.stdout
 
+    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section, ANOTHER_USER], check=True)
+
 
 # 09. Reverting a Section to Its Original State
 def test_09_revert_to_original_state():
@@ -133,27 +133,28 @@ def test_09_revert_to_original_state():
 
     result = subprocess.run(["python", "src/cli.py", "list-versions", TEST_DOC, section], capture_output=True, text=True)
     first_version = result.stdout.strip().split("\n")[0].split()[0]
-    print(first_version)
+    first_user = result.stdout.strip().split("\n")[0].split()[1]
 
-    rollback_result = subprocess.run(["python", "src/cli.py", "-v", "rollback-section", TEST_DOC, section, first_version, TEST_USER], capture_output=True, text=True)
-    assert "Section restored" in rollback_result.stdout
+    rollback_result = subprocess.run(["python", "src/cli.py", "-v", "rollback-section", TEST_DOC, section, first_version, first_user], capture_output=True, text=True)
+    assert "rolled back to version" in rollback_result.stdout
 
 
 # 10. Bulk Operations Workflow
 def test_10_bulk_operations():
-    section = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
+    section1 = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
+    section2 = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-2]
 
-    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section, TEST_USER], check=True)
-    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, ANOTHER_SECTION, TEST_USER], check=True)
+    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section1, TEST_USER], check=True)
+    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section2, TEST_USER], check=True)
 
-    subprocess.run(["python", "src/cli.py", "-v", "save-section", TEST_DOC, section, TEST_USER, "Updated Section 1"], check=True)
-    subprocess.run(["python", "src/cli.py", "-v", "save-section", TEST_DOC, ANOTHER_SECTION, TEST_USER, "Updated Section 2"], check=True)
+    v1 = subprocess.run(["python", "src/cli.py", "save-section", TEST_DOC, section1, TEST_USER, "Updated Section 1"], capture_output=True, text=True, check=True).stdout.strip()
+    v2 = subprocess.run(["python", "src/cli.py", "save-section", TEST_DOC, section2, TEST_USER, "Updated Section 2"], capture_output=True, text=True, check=True).stdout.strip()
 
-    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section, TEST_USER], check=True)
-    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, ANOTHER_SECTION, TEST_USER], check=True)
+    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section1, TEST_USER], check=True)
+    subprocess.run(["python", "src/cli.py", "-v", "unlock", TEST_DOC, section2, TEST_USER], check=True)
 
-    result = subprocess.run(["python", "src/cli.py", "-v", "list-versions", TEST_DOC, section], capture_output=True, text=True)
-    assert "Updated Section 1" in result.stdout
+    result = subprocess.run(["python", "src/cli.py", "-v", "list-versions", TEST_DOC, section1], capture_output=True, text=True)
+    assert v1 in result.stdout
 
-    result = subprocess.run(["python", "src/cli.py", "-v", "list-versions", TEST_DOC, ANOTHER_SECTION], capture_output=True, text=True)
-    assert "Updated Section 2" in result.stdout
+    result = subprocess.run(["python", "src/cli.py", "-v", "list-versions", TEST_DOC, section2], capture_output=True, text=True)
+    assert v2 in result.stdout

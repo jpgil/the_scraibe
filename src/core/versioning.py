@@ -62,6 +62,7 @@ def rollback_section(filename: str, section_id: str, timestamp: str, user: str):
         rollback_content = f.read()
 
     if original_content.split() == rollback_content.split():
-        raise ValueError("The original content is the same as the rollback content.")   
+        # Nothing to do, same thing
+        return timestamp
 
     return scraibe.save_section(filename, section_id, user, rollback_content)

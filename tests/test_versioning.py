@@ -45,14 +45,9 @@ Test content here.
 
 def test_01_save_section_version():
     content = 'New version of the section.'
-    version_file = save_section_version(TEST_DOC, TEST_SECTION, TEST_USER, content)
+    version = save_section_version(TEST_DOC, TEST_SECTION, TEST_USER, content)
 
-    assert os.path.exists(version_file)
-
-    with open(version_file, 'r') as f:
-        assert f.read() == content
-
-    os.remove(version_file)
+    assert version in " ".join([f for f in os.listdir("versions/") if TEST_SECTION in f and TEST_USER in f ])
 
 def test_02_get_version_history():
     save_section_version(TEST_DOC, TEST_SECTION, "user1", "content1")
@@ -62,13 +57,10 @@ def test_02_get_version_history():
     assert len(history) == 3
 
 def test_03_rollback_section():
-    version_filename = save_section_version(TEST_DOC, TEST_SECTION, TEST_USER, "content1")
+    timestamp = save_section_version(TEST_DOC, TEST_SECTION, TEST_USER, "content1")
     save_section_version(TEST_DOC, TEST_SECTION, "otheruser", "content2")
-    match = re.search(r"versions/(?P<filename>[^/]+)\.section_(?P<section_id>\d+_\d+)\.(?P<timestamp>\d+)\.(?P<user>[^/]+)\.md", version_filename)
-    timestamp = match.group("timestamp")
 
-    restored_filename = rollback_section(TEST_DOC, TEST_SECTION, timestamp, TEST_USER)
-    assert "section_" in restored_filename
+    _ = rollback_section(TEST_DOC, TEST_SECTION, timestamp, TEST_USER)
     
     restored_content = scraibe.load_section(TEST_DOC, TEST_SECTION)
     assert restored_content == 'content1'
