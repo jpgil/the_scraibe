@@ -59,30 +59,8 @@ if __name__ == "__main__":
             st.subheader("Your documents", divider=False)
             st.selectbox("Choose a document to continue editing", [""] + filtered_docs)
 
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.subheader("Upload Document")
-            filename = st.file_uploader(label="Document Filename (e.g., document01.md)", key="upload_doc_filename")
-            creator = st.session_state.get("username", "")
-            if st.button(label="Upload Document"):
-                if filename and creator:
-                    utils.notify("Not implemented yet")
-                    # if documents.add_document(filename, creator):
-                    #     utils.notify(f"Document {filename} created successfully!", switch="pages/01-documents.py")
-                else:
-                    st.error("Filename and creator are required.")
-
-        with col2:
-            st.subheader("Create New Document")
-            filename = st.text_input(label="Document Filename (e.g., document01.md)", key="doc_filename")
-            creator = st.session_state.get("username", "")
-            if st.button(label="Create Document"):
-                if filename and creator:
-                    if documents.add_document(filename, creator):
-                        utils.notify(f"Document {filename} created successfully!", switch="pages/01-documents.py")
-                else:
-                    st.error("Filename and creator are required.")
+        documents.render_document_create()
+        documents.render_document_upload()
 
         if users.Im_admin():
             users.render_user_management()

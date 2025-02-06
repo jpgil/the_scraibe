@@ -29,13 +29,13 @@ def save_documents(documents):
 def add_document(filename, creator):
     """Add a new document. The creator is stored as the owner with fixed rights."""
     docs = load_documents()
+    if not filename.endswith(".md"):
+        filename += ".md"
+
     if filename in docs["documents"]:
         st.error("Document already exists!")
         return False
     
-    if not filename.endswith(".md"):
-        st.error("Document must end in .md")
-        return False
 
     docs["documents"][filename] = {
         "creator": creator,
@@ -198,6 +198,29 @@ def render_manage_permissions_for_editor(doc_to_manage, doc_meta, current_user):
     st.markdown("#### Grant New Permissions")
     render_grant_permissions(doc_to_manage=doc_to_manage, doc_meta=doc_meta, key_prefix="editor", button_label="Add User as Editor")
 
+def render_document_upload():
+    st.subheader("Upload Document")
+    filename = st.file_uploader(label="Document Filename (e.g., document01.md)", key="upload_doc_filename")
+    creator = st.session_state.get("username", "")
+    if st.button(label="Upload Document"):
+        if filename and creator:
+            st.error("Not implemented yet")
+            # if documents.add_document(filename, creator):
+            #     utils.notify(f"Document {filename} created successfully!", switch="pages/01-documents.py")
+        else:
+            st.error("Filename and creator are required.")
+
+def render_document_create():
+    st.subheader("Create New Document")
+    filename = st.text_input(label="Document Filename (e.g., document01.md)", key="doc_filename")
+    creator = st.session_state.get("username", "")
+    if st.button(label="Create Document"):
+        if filename and creator:
+            if add_document(filename, creator):
+                utils.notify(f"Document {filename} created successfully!", switch="pages/01-documents.py")
+        else:
+            st.error("Filename and creator are required.")
+            
 def render_document_management():
     """Render the document management dashboard."""
     # current_user = st.session_state["username"]
@@ -218,15 +241,8 @@ def render_document_management():
     # Tab 2: Add New Document
     if "Add Document" in tab_list:
         with tabs[tab_list.index("Add Document")]:
-            st.header("Add New Document")
-            filename = st.text_input(label="Document Filename (e.g., document01.md)", key="doc_filename")
-            creator = st.session_state.get("username", "")
-            if st.button(label="Create Document"):
-                if filename and creator:
-                    if add_document(filename, creator):
-                        utils.notify(f"Document {filename} created successfully!", switch="pages/01-documents.py")
-                else:
-                    st.error("Filename and creator are required.")
+            render_document_upload()
+            render_document_create()
 
     # Tab 3: Manage Permissions
     if "Manage Permissions" in tab_list:
@@ -246,7 +262,10 @@ def render_document_management():
                     #     table_users.append({"username": entry['display_name'], "role": entry['permission']})
                     # df = pd.DataFrame(table_users)
                     # st.dataframe(df, column_config={"username": "Username", "role": "Role"}, hide_index=True)
-
+                    
+                    # st.write(doc_meta.get("users", []))
+                    
+                    creator = doc_meta.get("creator")
                     if current_user == creator:
                         render_manage_permissions_for_creator(doc_to_manage=doc_to_manage, doc_meta=doc_meta)
                     else:
