@@ -1,6 +1,9 @@
 import os
 import pytest
-from src.core.markdown_handler import load_document, save_document, list_sections, load_section, save_section
+import tempfile
+import shutil
+from src.core import load_document, save_document, list_sections, load_section, save_section
+from src.core import delete_document, get_filename_path, VERSION_DIR, LOCKS_DIR
 
 TEST_DOC_PATH = 'documents/test_document.md'
 
@@ -83,3 +86,52 @@ def test_07_save_section():
     #     assert f.read() == content
 
     # os.remove(saved_file)  # Cleanup versioned file after test
+
+
+
+
+def test_08_delete_document_success(tmp_path):
+    # Setup temporary directories for documents, versions, and locks
+    doc_name = "temp_test_doc.md"
+    documents_dir = tmp_path / "documents"
+    documents_dir.mkdir(exist_ok=True)
+    doc_path = documents_dir / doc_name
+    doc_path.write_text("# Temporary Document\nContent")
+
+    # Create dummy versions directory for this document
+    versions_doc_dir = tmp_path / "versions" / doc_name
+    versions_doc_dir.mkdir(parents=True, exist_ok=True)
+    version_file = versions_doc_dir / f"{doc_name}.section_12345.user.md"
+    version_file.write_text("Version content")
+
+    # Create dummy locks directory for this document
+    locks_doc_dir = tmp_path / "locks" / doc_name
+    locks_doc_dir.mkdir(parents=True, exist_ok=True)
+    lock_file = locks_doc_dir / f"{doc_name}.section_12345.lock"
+    lock_file.write_text("Lock content")
+
+    # Monkey-patch the globals in scraibe so that delete_document uses the tmp_path directories.
+    # (Adjust these if your module names differ.)
+    import src.core.markdown_handler as scraibe_module
+    original_version_dir = scraibe_module.VERSION_DIR
+    original_locks_dir = scraibe_module.LOCKS_DIR
+    original_get_filename_path = scraibe_module.get_filename_path
+    
+    scraibe_module.VERSION_DIR = str(tmp_path / "versions")
+    scraibe_module.LOCKS_DIR = str(tmp_path / "locks")
+    scraibe_module.get_filename_path = lambda filename, check_path=False: str(doc_path)
+
+    try:
+        # Call delete_document
+        result = delete_document(str(doc_path))
+        assert result is True
+
+        # Verify that the document and its related version and lock directories are removed
+        assert not doc_path.exists()
+        assert not (tmp_path / "versions" / doc_name).exists()
+        assert not (tmp_path / "locks" / doc_name).exists()
+    finally:
+        # Restore the original directories
+        scraibe_module.VERSION_DIR = original_version_dir
+        scraibe_module.LOCKS_DIR = original_locks_dir
+        scraibe_module.get_filename_path = original_get_filename_path

@@ -64,6 +64,10 @@ def main():
     parser_version_history = subparsers.add_parser('version-history', help='Show version history of a section')
     parser_version_history.add_argument('filename', type=str, help='Document name')
     parser_version_history.add_argument('section', type=str, help='Section ID')
+    
+    # Delete Document
+    parser_delete = subparsers.add_parser('delete', help='Delete a document, versions and locks')
+    parser_delete.add_argument('filename', type=str, help='Document name')
 
     def verbose_print(verbose, message):
         if verbose:
@@ -166,6 +170,10 @@ def main():
             raise(f"The document {args.filename} has bad sintaxis, fix it manually")
         result = scraibe.save_document(args.filename, lbl1)
         verbose_print(args.verbose, f"Document {args.filename} labelled.")
+
+    elif args.command == 'delete':
+        scraibe.delete_document(args.filename)
+        verbose_print(args.verbose, f'Document {args.filename} has been deleted.')
 
 if __name__ == '__main__':
     main()

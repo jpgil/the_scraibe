@@ -1,0 +1,14 @@
+[theme]
+base="light"
+secondaryBackgroundColor="#f5f0f0"
+textColor="#51535f"
+font="serif"
+
+[runner]
+# Handle script rerun requests immediately, rather than waiting for script
+# execution to reach a yield point. This makes Streamlit much more
+# responsive to user interaction, but it can lead to race conditions in
+# apps that mutate session_state data outside of explicit session_state
+# assignment statements.
+# Default: true
+fastReruns = false

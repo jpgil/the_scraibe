@@ -158,3 +158,21 @@ def test_10_bulk_operations():
 
     result = subprocess.run(["python", "src/cli.py", "-v", "list-versions", TEST_DOC, section2], capture_output=True, text=True)
     assert v2 in result.stdout
+
+
+def test_11_cli_delete_document(tmp_path):
+    section1 = scraibe.list_sections(scraibe.load_document(TEST_DOC))[-1]
+
+    subprocess.run(["python", "src/cli.py", "-v", "lock", TEST_DOC, section1, TEST_USER], check=True)
+    # Run the CLI command for deletion.
+    result = subprocess.run(
+        ["python", "src/cli.py", "-v", "delete", TEST_DOC],
+        capture_output=True, text=True, check=True
+    )
+    # Expect output indicating deletion succeeded.
+    assert "deleted" in result.stdout.lower()
+
+    # Check that the document and its version/lock directories are removed.
+    assert not os.path.exists(TEST_DOC)
+    assert not os.path.exists(f"versions/{TEST_DOC}")
+    assert not os.path.exists(f"locks/{TEST_DOC}")
