@@ -5,18 +5,24 @@ import datetime
 from src.core.locks import is_section_locked
 from src.core.versioning import save_section_version
 
+DOCUMENT_PATH = "documents"
 
+def get_filename_path(filename: str, check_path=True):
+    normalized = os.path.join(DOCUMENT_PATH, os.path.basename(filename))
+    if check_path and not os.path.exists(normalized):
+        raise FileNotFoundError(f'Error: The path {normalized} does not exist.')
+    return normalized
 
 def load_document(filename: str) -> str:
     """Carga el contenido de un documento Markdown."""
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f'El archivo {filename} no existe.')
+    filename = get_filename_path(filename)
     
     with open(filename, 'r', encoding='utf-8') as f:
         return f.read()
 
 def save_document(filename: str, content: str):
     """Guarda el contenido de un documento Markdown."""
+    filename = get_filename_path(filename, check_path=False)
     try:
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(content)
@@ -35,11 +41,9 @@ def list_sections(content: str) -> list:
     return sections
 
 def load_section(filename: str, section_id: str) -> str:
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f'El archivo {filename} no existe.')
-    else:
-        content = load_document(filename)
-        return extract_section(content, section_id)
+    filename = get_filename_path(filename, check_path=False)
+    content = load_document(filename)
+    return extract_section(content, section_id)
     
 def extract_section(content: str, section_id: str) -> str:
     """Extrae y devuelve el contenido de una sección específica."""
@@ -75,6 +79,7 @@ def extract_section(content: str, section_id: str) -> str:
 def save_section(filename: str, section_id: str, user: str, new_content: str):
     """Saves a new version of a section but prevents modification if it's locked by another user."""
 
+    filename = os.path.basename(filename)
     # Check if section is locked and by whom
     # Wait at most 1s to unlock
     locking_user = is_section_locked(filename, section_id)
@@ -97,9 +102,6 @@ def save_section(filename: str, section_id: str, user: str, new_content: str):
     # Read the document
     doc_original = load_document(filename)
     lines = doc_original.splitlines()
-
-    # with open(filename, "r", encoding="utf-8") as f:
-    #     lines = f.readlines()
         
     # Validate the new content syntax
     is_valid, message = validate_markdown_syntax("\n".join(lines))
@@ -134,14 +136,16 @@ def save_section(filename: str, section_id: str, user: str, new_content: str):
     version_filename = save_section_version(filename, section_id, user, new_content)
 
     # Save the modified document
-    with open(filename, "w", encoding="utf-8") as f:
+    filename_complete = get_filename_path(filename)
+
+    with open(filename_complete, "w", encoding="utf-8") as f:
         f.write("\n".join(updated_lines) + "\n")
         
     # Reload to see if it wrote ok
     reloaded_content = load_document(filename)
     if "\n".join(updated_lines) not in reloaded_content:
         # Restore the original
-        with open(filename, "w", encoding="utf-8") as f:
+        with open(filename_complete, "w", encoding="utf-8") as f:
             f.write(doc_original)
         raise IOError(f"Error: Failed to write new content to section {section_id}.")
 
@@ -195,9 +199,7 @@ def add_section_markers(content: str) -> str:
 
 def load_and_label_document(filename: str) -> str:
     """Loads a Markdown document and ensures it has section markers."""
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f'Error: File {filename} not found.')
-
+    filename = get_filename_path(filename)
     with open(filename, 'r', encoding='utf-8') as f:
         content = f.read()
 

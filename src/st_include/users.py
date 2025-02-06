@@ -123,7 +123,7 @@ def Im_logged_in():
     return "logged_in" in st.session_state
 
 def render_user_loggedin():
-    if st.button(f"Logout {st.session_state['username']} ({st.session_state['role']})"):
+    if st.button(f"Logout {st.session_state['username']}"):
         st.session_state.clear()  # TODO: move outside
         utils.notify("Logged out successfully!")
 
@@ -157,7 +157,7 @@ def render_user_management():
     
     st.header("Admin Management")
 
-    tab =st.tabs(["User List", "User Management", "Add User"])
+    tab = st.tabs(["User List", "User Management", "Add User"])
     
     with tab[0]:
 
@@ -227,9 +227,13 @@ def render_user_management():
         st.header("Add User")
 
         # Create new user
-        username = st.text_input("New Username", key="new_username")
-        password = st.text_input("New Password", type="password", key="new_password")
-        role = st.selectbox("Role", ["viewer", "editor", "admin"], key="new_role")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            username = st.text_input("New Username", key="new_username")
+        with col2:
+            password = st.text_input("New Password", type="password", key="new_password")
+        with col3:
+            role = st.selectbox("Role", ["viewer", "editor", "admin"], key="new_role")
         
         if st.button("Add User"):
             if username and password:
