@@ -290,6 +290,7 @@ def render_document_management():
                             docs = load_documents()["documents"]
                             del docs[doc_to_delete]
                             save_documents({"documents": docs})
+                            scraibe.delete_document(doc_to_delete)
                             utils.notify(f"Document {doc_to_delete} deleted successfully!")
                     else:
                         st.error("Only the creator can delete the document.")

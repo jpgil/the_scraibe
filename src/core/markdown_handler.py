@@ -14,6 +14,11 @@ def get_filename_path(filename: str, check_path=True):
         raise FileNotFoundError(f'Error: The path {normalized} does not exist.')
     return normalized
 
+def load_document_nolabels(filename: str) -> str:
+    content = load_document(filename)
+    cleaned = re.sub(r'>>>>>ID#\d+_\d+|<<<<<ID#\d+_\d+', '', content)
+    return cleaned
+
 def load_document(filename: str) -> str:
     """Loads the content of a Markdown document."""
     filename = get_filename_path(filename)

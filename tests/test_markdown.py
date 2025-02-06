@@ -33,8 +33,7 @@ def setup_and_cleanup(sample_markdown):
     yield  # Run the test
 
     # After test: Clean up the file
-    if os.path.exists(TEST_DOC_PATH):
-        os.remove(TEST_DOC_PATH)
+    delete_document(TEST_DOC_PATH)
 
 # Test 1: Cargar un documento existente
 def test_01_load_document_exists():

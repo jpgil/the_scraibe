@@ -7,13 +7,8 @@ if __name__ == "__main__":
 
     # UI Setup
     utils.sidebar(__file__)
-    # st.title("the scrAIbe")
-
-    # if not users.Im_logged_in():
-        # st.image("images/the_scribe.png", width=300)
-
+    
     col1, col2 = st.columns(2)
-
     with col1:
         st.image("images/the_scribe.png", width=300)
 
@@ -57,7 +52,10 @@ if __name__ == "__main__":
         filtered_docs = list(documents.filter_documents_for_user(current_user))
         if filtered_docs:
             st.subheader("Your documents", divider=False)
-            st.selectbox("Choose a document to continue editing", [""] + filtered_docs)
+            selected_file = st.selectbox("Choose a document to continue editing", [""] + filtered_docs)
+            if selected_file:
+                st.session_state["document_file"] = selected_file
+                st.switch_page("pages/10-write.py")
 
         documents.render_document_create()
         documents.render_document_upload()

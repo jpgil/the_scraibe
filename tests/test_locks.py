@@ -66,7 +66,8 @@ def test_06_check_all_locks():
 # Clean up after all tests
 def teardown_module(module):
     """Cleans up any lock files after all tests."""
-    if os.path.exists(LOCK_FILE):
-        os.remove(LOCK_FILE)
-    if os.path.exists(ANOTHER_LOCK_FILE):
-        os.remove(ANOTHER_LOCK_FILE)
+    # if os.path.exists(LOCK_FILE):
+    #     os.remove(LOCK_FILE)
+    # if os.path.exists(ANOTHER_LOCK_FILE):
+    #     os.remove(ANOTHER_LOCK_FILE)
+    # scraibe.delete_document(TEST_DOC)

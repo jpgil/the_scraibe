@@ -21,14 +21,7 @@ def setup_and_cleanup(sample_markdown):
 
     yield  # Run the test
 
-    # After test: Clean up the file
-    if os.path.exists(TEST_DOC):
-        os.remove(TEST_DOC)
-    # Remove versions
-    TEST_DOC_BASE = os.path.basename(TEST_DOC)
-    version_files = [f for f in os.listdir(f'versions/{TEST_DOC_BASE}/') if f.startswith(f"{os.path.basename(TEST_DOC)}.section_")]
-    for vf in version_files:
-        os.remove(os.path.join('versions', TEST_DOC_BASE, vf))
+    scraibe.delete_document(TEST_DOC)
         
 @pytest.fixture
 def sample_markdown():
