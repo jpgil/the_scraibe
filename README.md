@@ -1,4 +1,5 @@
 # the scrAIbe
+{Write here the description. Use the standards of GITHUB }
 
 ## Local install
     python -m venv venv
@@ -6,11 +7,21 @@
     python -m pip install --upgrade pip wheel
     pip install -r requirements.txt
 
-    pip install -e .
+## GUI Deployment
+{Instructions for streamlit in servers}
+
 
 ## Run tests
-
     # Run all
     pytest
-    # Run one test
+
+    # Run one testfile
     pytest -s tests/test_locks.py
+
+    # Run one testcase
+    pytest -s tests/test_locks.py -k test_01_lock_section
+
+## Contribute
+
+## Licence MIT
+{write here}

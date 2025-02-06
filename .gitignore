@@ -7,6 +7,9 @@
 .lock
 .pytest*
 *.egg-info
+*.DS_Store*
 logs/
 versions/
 documents/
+users.yaml
+documents.yaml

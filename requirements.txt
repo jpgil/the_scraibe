@@ -3,4 +3,4 @@ fastapi
 streamlit
 pytest
 pyyaml
-
+-e .
