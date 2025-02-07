@@ -12,3 +12,6 @@ font="serif"
 # assignment statements.
 # Default: true
 fastReruns = false
+
+[client]
+toolbarMode = "minimal"

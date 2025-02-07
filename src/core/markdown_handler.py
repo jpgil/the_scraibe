@@ -150,6 +150,83 @@ def extract_section(content: str, section_id: str) -> str:
 
     return "\n".join(section_content)
 
+
+def delete_section(filename: str, section_id: str, user: str):
+    """Delete a complete section of the file, check locks before"""
+    filename = os.path.basename(filename)
+    # Check if section is locked and by whom
+    # Wait at most 1s to unlock
+    locking_user = is_section_locked(filename, section_id)
+    TRIES = 10
+    while TRIES > 0 and locking_user and locking_user != user:
+        TRIES -= 1
+        time.sleep(0.1)
+        print(f"Waiting for {locking_user} unlocking {filename} ... {TRIES}")
+        locking_user = is_section_locked(filename, section_id)
+    
+    locking_user = is_section_locked(filename, section_id)
+    if locking_user and locking_user != user:
+        raise PermissionError(f"Error: Section {section_id} is locked by {locking_user}. Cannot save changes.")
+
+    # Check section exists
+    existing_sections = list_sections(load_document(filename))
+    if section_id not in existing_sections:
+        raise ValueError(f"Error: Section {section_id} does not exist in the document.")
+
+    # Read the document
+    doc_original = load_document(filename)
+    lines = doc_original.splitlines()
+        
+    # Validate the new content syntax
+    is_valid, message = validate_markdown_syntax("\n".join(lines))
+    if not is_valid:
+        raise ValueError(f"Error: Invalid Markdown syntax in new content. {message}")
+
+    # Process lines and update section content
+    in_target_section = False
+    in_previous = True
+    previous_lines = []
+    next_lines = []
+    for line in lines:
+        if line.strip() == f">>>>>ID#{section_id}":
+            in_target_section = True
+            # previous_lines.append(line)
+            
+        elif in_target_section and line.startswith("<<<<<ID#"):
+            in_target_section = False  # End of section
+            in_previous = False
+            # next_lines.append(line)
+
+        elif not in_target_section:
+            if in_previous:
+                previous_lines.append(line)
+            else:
+                next_lines.append(line)
+    
+    # updated_lines = previous_lines + new_content.strip().splitlines() + next_lines
+    updated_lines = previous_lines + next_lines
+
+    # Save the version
+    version_filename = save_section_version(filename, section_id, user, "")
+
+    # Save the modified document
+    filename_complete = get_filename_path(filename)
+
+    with open(filename_complete, "w", encoding="utf-8") as f:
+        f.write("\n".join(updated_lines) + "\n")
+        
+    # Reload to see if it wrote ok
+    reloaded_content = load_document(filename)
+    if "\n".join(updated_lines) not in reloaded_content:
+        # Restore the original
+        with open(filename_complete, "w", encoding="utf-8") as f:
+            f.write(doc_original)
+        raise IOError(f"Error: Failed to write new content to section {section_id}.")
+
+    return version_filename
+
+
+
 def save_section(filename: str, section_id: str, user: str, new_content: str):
     """Saves a new version of a section but prevents modification if it's locked by another user."""
 

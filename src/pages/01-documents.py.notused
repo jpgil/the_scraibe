@@ -8,6 +8,6 @@ import src.core as scraibe
 if __name__ == "__main__":
     utils.sidebar(__file__)
     if not users.Im_logged_in():
-        utils.notify("Login to see documents", switch="ui.py")
+        utils.notify("Login to see documents", switch="dashboard.py")
     st.title("Documents Dashboard")
     documents.render_document_management()

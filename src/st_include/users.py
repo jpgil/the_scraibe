@@ -37,7 +37,7 @@ def delete_user(username):
         del users[username]
         save_users(users)
         return True
-        utils.notify(f"User {username} deleted.", switch="ui.py")  # TODO: move outside
+        utils.notify(f"User {username} deleted.", switch="dashboard.py")  # TODO: move outside
     else:
         return False
         st.error("User not found!")  # TODO: move outside
@@ -210,18 +210,10 @@ def render_user_management():
                     update_password(selected_user, new_password)
 
             col1, col2, _ = st.columns([3, 3, 3])
-            with col1:
-                confirm = st.selectbox(
-                    "Confirm deletion", 
-                    ["No", "Yes"],
-                    label_visibility='collapsed',
-                )
+
             with col2:
-                if st.button("Delete User") and confirm == "Yes":
-                    if delete_user(selected_user):
-                        utils.notify(f"User {selected_user} deleted.", switch="ui.py")
-                    else:
-                        st.error("User not found!")
+                if st.button("Delete User"):# and confirm == "Yes":
+                    utils.confirm_action(f"Delete {selected_user}?", delete_user, selected_user)
 
     with tab[2]:
         st.header("Add User")
@@ -245,7 +237,7 @@ def render_user_management():
                         "last_login": None
                     }
                     if save_users(users):
-                        utils.notify(f"User {username} added successfully!", switch="ui.py")
+                        utils.notify(f"User {username} added successfully!", switch="dashboard.py")
                     else:
                         st.error("Something bad happened")
                         

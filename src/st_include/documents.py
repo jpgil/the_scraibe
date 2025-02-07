@@ -7,6 +7,10 @@ from src.st_include import utils
 import src.st_include.users as users
 import src.core as scraibe
 
+#
+# TODO: remove st.* whenever possible
+
+
 # YAML file for document metadata
 DOC_DB = "documents.yaml"
 
@@ -51,7 +55,7 @@ Your content will be here
     scraibe.save_document(filename, content)
     save_documents(docs)
     # utils.notify(f"Document {filename} created successfully!")
-    return True
+    return os.path.basename(scraibe.get_filename_path(filename))
 
 def update_document_permission_for_user(filename, username, permission, display_name=None):
     """Update the permission (and optionally display name) for a given user in a document."""
@@ -111,6 +115,29 @@ def filter_documents_for_user(username):
     all_docs = load_documents()["documents"]
     return {doc: meta for doc, meta in all_docs.items() if any(u["name"] == username for u in meta.get("users", []))}
 
+#
+# File properties & checks
+# ---------------
+#
+
+
+def set_active_document(document):
+    st.session_state["document_file"] = document
+    st.session_state['last_active_id'] = ""
+    set_active_section_id(False)
+def active_document():
+    return st.session_state["document_file"]
+
+def set_active_section_id(section_id):
+    st.session_state['active_sessions'] = section_id
+def active_section_id():
+    return st.session_state.get('active_sessions', '')
+
+
+#
+# Renders for Streamlit
+# ---------------------
+#
 def render_document_list():
     """Display a table with existing documents and their metadata."""
     docs = load_documents()["documents"]
@@ -216,8 +243,10 @@ def render_document_create():
     creator = st.session_state.get("username", "")
     if st.button(label="Create Document"):
         if filename and creator:
-            if add_document(filename, creator):
-                utils.notify(f"Document {filename} created successfully!", switch="pages/01-documents.py")
+            document_file = add_document(filename, creator)
+            if document_file:
+                st.session_state["document_file"] = document_file
+                utils.notify(f"Document {document_file} created successfully!", switch="pages/10-write.py")
         else:
             st.error("Filename and creator are required.")
             
@@ -225,9 +254,12 @@ def render_document_management():
     """Render the document management dashboard."""
     # current_user = st.session_state["username"]
     user_role    = st.session_state["role"]
+    current_user = st.session_state.get("username")
+    filtered_docs = filter_documents_for_user(current_user)
 
     if user_role in ["editor", "admin"]:
-        tab_list = ["Document List", "Add Document", "Manage Permissions", "Delete Document"]
+        # tab_list = ["Document List", "Add Document", "Manage Permissions", "Delete Document"]
+        tab_list = ["Document List", "Request access", "Manage Permissions", "Delete Document"]
     else:
         tab_list = ["Document List"]
     tabs = st.tabs(tab_list)
@@ -235,7 +267,7 @@ def render_document_management():
     # Tab 1: Document List
     if "Document List" in tab_list:
         with tabs[tab_list.index("Document List")]:
-            st.header("Existing Documents")
+            # st.header("Existing Documents")
             render_document_list()
 
     # Tab 2: Add New Document
@@ -247,9 +279,7 @@ def render_document_management():
     # Tab 3: Manage Permissions
     if "Manage Permissions" in tab_list:
         with tabs[tab_list.index("Manage Permissions")]:
-            st.header("Manage Document Permissions")
-            current_user = st.session_state.get("username")
-            filtered_docs = filter_documents_for_user(current_user)
+            # st.header("Manage Document Permissions")
             if not filtered_docs:
                 st.info("No documents to manage.")
             else:
@@ -277,7 +307,7 @@ def render_document_management():
     # Tab 4: Delete Document
     if "Delete Document" in tab_list:
         with tabs[tab_list.index("Delete Document")]:
-            st.header("Delete Document")
+            # st.header("Delete Document")
             current_user = st.session_state.get("username")
             filtered_docs = filter_documents_for_user(current_user)
             if not filtered_docs:
@@ -295,3 +325,21 @@ def render_document_management():
                     else:
                         st.error("Only the creator can delete the document.")
 
+    if "Request access" in tab_list:
+        with tabs[tab_list.index("Request access")]:
+            st.warning("Feature not implemented yet")
+
+            if not filtered_docs:
+                st.info("No documents to manage.")
+            else:
+                col1, col2 = st.columns([3,1])
+                with col1:
+                    doc_to_manage = st.selectbox("Request access to", [""] + list(filtered_docs.keys()), key="doc_access")
+                with col2:
+                    role = st.selectbox("As role", ["", "viewer", "editor"])
+                
+                if doc_to_manage and role:
+                    if filtered_docs[doc_to_manage].get('creator') == st.session_state['username']:
+                        st.info
+                    if st.button(f"Request access to {filtered_docs[doc_to_manage].get('creator')}"):
+                        st.error("As I said, not implement yet!")

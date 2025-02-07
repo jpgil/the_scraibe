@@ -7,6 +7,8 @@
     python -m pip install --upgrade pip wheel
     pip install -r requirements.txt
 
+    python -m streamlit run src/dashboard.py
+
 ## GUI Deployment
 {Instructions for streamlit in servers}
 

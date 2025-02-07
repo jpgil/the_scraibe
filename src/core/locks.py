@@ -29,7 +29,7 @@ def lock_section(filename: str, section_id: str, user: str) -> bool:
 
     return True
 
-def is_section_locked(filename: str, section_id: str) -> str:
+def is_section_locked(filename: str, section_id: str) -> str | None:
     """Checks if a section is locked and returns the locking user."""
     filename = os.path.basename(filename)
     lock_file = f'{LOCKS_DIR}/{filename}/{filename}.section_{section_id}.lock'

@@ -54,11 +54,14 @@ if __name__ == "__main__":
             st.subheader("Your documents", divider=False)
             selected_file = st.selectbox("Choose a document to continue editing", [""] + filtered_docs)
             if selected_file:
-                st.session_state["document_file"] = selected_file
+                documents.set_active_document(selected_file)
                 st.switch_page("pages/10-write.py")
 
         documents.render_document_create()
         documents.render_document_upload()
+
+        st.subheader("Documents Dashboard")
+        documents.render_document_management()
 
         if users.Im_admin():
             users.render_user_management()

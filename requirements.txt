@@ -3,4 +3,7 @@ fastapi
 streamlit
 pytest
 pyyaml
+markdown
+markdownify
+streamlit-quill
 -e .
