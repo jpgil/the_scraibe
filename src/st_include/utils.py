@@ -8,8 +8,9 @@ import yaml
 import os
 import hashlib
 
-
+ph = None
 def sidebar(pagefilename):
+    global ph
     st.set_page_config(layout="wide", page_title="the scrAIbe")
     _notify_show()
     """Sidebar for login/logout and user actions."""         
@@ -33,6 +34,8 @@ def sidebar(pagefilename):
             users.render_user_loggedout()
         else:
             users.render_user_loggedin()
+            
+    ph = st.sidebar.container()
                     
 def notify(msg, switch=False):
     if 'notify_channel' not in st.session_state:
@@ -118,15 +121,14 @@ def confirm_action(question, func, *args, **params):
         st.error(error)
 
 def scroll_to_here():
+    global ph
     st.markdown(f'<div id="scrolltohere"></div>', unsafe_allow_html=True)
-    js_code = f"""
-    <script>
+    js_code = f"""<script style="display: none; ">
         window.onload = function() {{
             var element = parent.document.getElementById("scrolltohere");
             if (element) {{
                 element.scrollIntoView({{ behavior: "smooth", block: "start" }});
             }}
         }};
-    </script>
-    """
+    </script>"""
     components.html(js_code, height=0)

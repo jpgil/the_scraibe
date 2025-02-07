@@ -54,7 +54,7 @@ if __name__ == "__main__":
                         utils.scroll_to_here()
                         del(st.session_state['last_active_id'])
                     section_content = scraibe.extract_section(document_content, section_id)
-                    st.markdown(section_content)
+                    st.markdown(section_content.strip())
                     
             # Action buttons
             # ----------

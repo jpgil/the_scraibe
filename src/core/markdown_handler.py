@@ -28,10 +28,17 @@ def load_document(filename: str) -> str:
 
 def save_document(filename: str, content: str):
     """Saves the content of a Markdown document."""
+    lbl1 = add_section_markers(content)
+    lbl1 = repair_markdown_syntax(lbl1)
+    valid, msg = validate_markdown_syntax(lbl1)
+    if not valid:
+        print(msg)
+        raise(f"The document {filename} has bad sintaxis, fix it manually")
+
     filename = get_filename_path(filename, check_path=False)
     try:
         with open(filename, 'w', encoding='utf-8') as f:
-            f.write(content)
+            f.write(lbl1)
     except PermissionError:
         raise PermissionError(f'You do not have permission to write to {filename}.')
     return True
@@ -288,16 +295,17 @@ def save_section(filename: str, section_id: str, user: str, new_content: str):
     # Save the modified document
     filename_complete = get_filename_path(filename)
 
-    with open(filename_complete, "w", encoding="utf-8") as f:
-        f.write("\n".join(updated_lines) + "\n")
+    # with open(filename_complete, "w", encoding="utf-8") as f:
+    #     f.write("\n".join(updated_lines) + "\n")
+    save_document(filename_complete, "\n".join(updated_lines) + "\n")
         
-    # Reload to see if it wrote ok
-    reloaded_content = load_document(filename)
-    if "\n".join(updated_lines) not in reloaded_content:
-        # Restore the original
-        with open(filename_complete, "w", encoding="utf-8") as f:
-            f.write(doc_original)
-        raise IOError(f"Error: Failed to write new content to section {section_id}.")
+    # # Reload to see if it wrote ok
+    # reloaded_content = load_document(filename)
+    # if "\n".join(updated_lines) not in reloaded_content:
+    #     # Restore the original
+    #     with open(filename_complete, "w", encoding="utf-8") as f:
+    #         f.write(doc_original)
+    #     raise IOError(f"Error: Failed to write new content to section {section_id}.")
 
     return version_filename
 
