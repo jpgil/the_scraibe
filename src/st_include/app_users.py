@@ -4,7 +4,7 @@ import os
 import hashlib
 import pandas as pd
 import time
-from src.st_include import utils
+from src.st_include import app_utils
 from datetime import datetime
 
 # Load users from YAML
@@ -37,7 +37,7 @@ def delete_user(username):
         del users[username]
         save_users(users)
         return True
-        utils.notify(f"User {username} deleted.", switch="dashboard.py")  # TODO: move outside
+        app_utils.notify(f"User {username} deleted.", switch="dashboard.py")  # TODO: move outside
     else:
         return False
         st.error("User not found!")  # TODO: move outside
@@ -57,7 +57,7 @@ def add_user(username, password, role="viewer"):
     }
     
     save_users(users)
-    utils.notify(f"User {username} created successfully.")
+    app_utils.notify(f"User {username} created successfully.")
 
 def update_role(username, new_role):
     """Update a user's role."""
@@ -65,7 +65,7 @@ def update_role(username, new_role):
     if username in users:
         users[username]["role"] = new_role
         save_users(users)
-        utils.notify(f"Role updated to {new_role} for {username}")
+        app_utils.notify(f"Role updated to {new_role} for {username}")
     else:
         st.error("User not found!")  # TODO: move outside
 
@@ -75,7 +75,7 @@ def update_password(username, new_password):
     if username in users:
         users[username]["password"] = hash_password(new_password)
         save_users(users)
-        utils.notify(f"Password updated for {username}")
+        app_utils.notify(f"Password updated for {username}")
     else:
         st.error("User not found!")  # TODO: move outside
 
@@ -113,7 +113,7 @@ def do_login(username, password):
         users[username]["last_login"] = datetime.now()  # Placeholder for real timestamp
         save_users(users)
 
-        utils.notify(f"Welcome, {username}!")
+        app_utils.notify(f"Welcome, {username}!")
         return True
 
 def Im_admin():
@@ -125,7 +125,7 @@ def Im_logged_in():
 def render_user_loggedin():
     if st.button(f"Logout {st.session_state['username']}"):
         st.session_state.clear()  # TODO: move outside
-        utils.notify("Logged out successfully!")
+        app_utils.notify("Logged out successfully!")
 
 def render_user_loggedout():
     with st.form(key="login_form", border=False):
@@ -213,7 +213,7 @@ def render_user_management():
 
             with col2:
                 if st.button("Delete User"):# and confirm == "Yes":
-                    utils.confirm_action(f"Delete {selected_user}?", delete_user, selected_user)
+                    app_utils.confirm_action(f"Delete {selected_user}?", delete_user, selected_user)
 
     with tab[2]:
         st.header("Add User")
@@ -237,7 +237,7 @@ def render_user_management():
                         "last_login": None
                     }
                     if save_users(users):
-                        utils.notify(f"User {username} added successfully!", switch="dashboard.py")
+                        app_utils.notify(f"User {username} added successfully!", switch="dashboard.py")
                     else:
                         st.error("Something bad happened")
                         

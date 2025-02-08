@@ -1,8 +1,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import time
-import src.st_include.users as users
-import src.st_include.documents as documents
+import src.st_include.app_users as app_users
+import src.st_include.app_docs as app_docs
 
 import yaml
 import os
@@ -18,7 +18,7 @@ def sidebar(pagefilename):
     with st.sidebar:
         if "10-write.py" in pagefilename:
             current_user = st.session_state.get("username")
-            filtered_docs = [""] + list(documents.filter_documents_for_user(current_user))
+            filtered_docs = [""] + list(app_docs.filter_documents_for_user(current_user))
             if filtered_docs:
                 if st.session_state.get("document_file") in filtered_docs:
                     selected_document_index = filtered_docs.index(st.session_state["document_file"])
@@ -31,9 +31,9 @@ def sidebar(pagefilename):
                     )
 
         if "logged_in" not in st.session_state:
-            users.render_user_loggedout()
+            app_users.render_user_loggedout()
         else:
-            users.render_user_loggedin()
+            app_users.render_user_loggedin()
             
     ph = st.sidebar.container()
                     

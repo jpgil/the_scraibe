@@ -3,8 +3,8 @@ import yaml
 import os
 from datetime import datetime
 import pandas as pd
-from src.st_include import utils
-import src.st_include.users as users
+from src.st_include import app_utils
+import src.st_include.app_users as app_users
 import src.core as scraibe
 
 #
@@ -84,7 +84,7 @@ def update_document_permission_for_user(filename, username, permission, display_
 
     docs["documents"][filename]["users"] = users_list
     save_documents(docs)
-    utils.notify(f"Permissions updated for {username} in document {filename}")
+    app_utils.notify(f"Permissions updated for {username} in document {filename}")
     return True
 
 def remove_user_permission(filename, username):
@@ -107,13 +107,16 @@ def remove_user_permission(filename, username):
 
     docs["documents"][filename]["users"] = new_list
     save_documents(docs)
-    utils.notify(f"User {username} removed from document {filename}")
+    app_utils.notify(f"User {username} removed from document {filename}")
     return True
 
 def filter_documents_for_user(username):
     """Return a dictionary of documents for which the given username is listed."""
     all_docs = load_documents()["documents"]
-    return {doc: meta for doc, meta in all_docs.items() if any(u["name"] == username for u in meta.get("users", []))}
+    return {
+        doc: meta for doc, meta in all_docs.items() 
+        if any(u["name"] == username for u in meta.get("users", []))
+        }
 
 #
 # File properties & checks
@@ -155,7 +158,7 @@ def render_document_list():
 
 def render_grant_permissions(doc_to_manage, doc_meta, key_prefix, button_label):
     """Render UI to grant permissions for adding a new user."""
-    all_users = users.load_users()
+    all_users = app_users.load_users()
     current_doc_users = [u["name"] for u in doc_meta.get("users", [])]
     available_users = [u for u in all_users.keys() if u not in current_doc_users]
 
@@ -246,7 +249,7 @@ def render_document_create():
             document_file = add_document(filename, creator)
             if document_file:
                 st.session_state["document_file"] = document_file
-                utils.notify(f"Document {document_file} created successfully!", switch="pages/10-write.py")
+                app_utils.notify(f"Document {document_file} created successfully!", switch="pages/10-write.py")
         else:
             st.error("Filename and creator are required.")
             
@@ -321,7 +324,7 @@ def render_document_management():
                             del docs[doc_to_delete]
                             save_documents({"documents": docs})
                             scraibe.delete_document(doc_to_delete)
-                            utils.notify(f"Document {doc_to_delete} deleted successfully!")
+                            app_utils.notify(f"Document {doc_to_delete} deleted successfully!")
                     else:
                         st.error("Only the creator can delete the document.")
 
