@@ -2,7 +2,7 @@
 base="light"
 secondaryBackgroundColor="#f5f0f0"
 textColor="#51535f"
-font="serif"
+font="sans-serif"
 
 [runner]
 # Handle script rerun requests immediately, rather than waiting for script

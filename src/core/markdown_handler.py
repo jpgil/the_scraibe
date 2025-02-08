@@ -26,10 +26,15 @@ def load_document(filename: str) -> str:
     with open(filename, 'r', encoding='utf-8') as f:
         return f.read()
 
-def save_document(filename: str, content: str):
+def save_document(filename: str, content: str, verbose = False):
     """Saves the content of a Markdown document."""
+    # raise( UserWarning(content) )
     lbl1 = add_section_markers(content)
     lbl1 = repair_markdown_syntax(lbl1)
+    if lbl1 != content:
+        print(f'Changes detected: ')
+        print(f'Original = {content}')
+        print(f'Repaired = {lbl1}')
     valid, msg = validate_markdown_syntax(lbl1)
     if not valid:
         print(msg)
@@ -417,6 +422,8 @@ def repair_markdown_syntax(content: str, force_timestamp=False) -> str:
     else:
         timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
+    content = add_section_markers(content)
+
     lines = content.split("\n")
     new_content = []
     open_sections = set()
@@ -483,6 +490,7 @@ def repair_markdown_syntax(content: str, force_timestamp=False) -> str:
 
 
 def _ID_index(txt, section_lines):
+    # print(txt, section_lines)
     testlist = [x for x in section_lines if txt in x]
     if len(testlist) != 1:
         raise ValueError(f"Repair failed because invalid markdown: {testlist}")

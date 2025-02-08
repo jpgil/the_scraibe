@@ -4,6 +4,8 @@ streamlit
 pytest
 pyyaml
 markdown
+mistune
+beautifulsoup4
 markdownify
 streamlit-quill
 -e .

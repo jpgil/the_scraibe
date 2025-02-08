@@ -100,6 +100,97 @@ QUILL_MARKDOWN_TOOLBAR = [
     ["clean"],  # Remove formatting
 ]
 
+
+from bs4 import BeautifulSoup
+def fix_quill_nested_lists_v1(html):
+    soup = BeautifulSoup(html, "html.parser")
+
+    for list_tag in soup.find_all(["ul", "ol"]):  # Find all lists
+        list_items = list_tag.find_all("li", recursive=False)  # Get only top-level LIs
+        stack = [[]]  # Stack to track nesting levels
+
+        for li in list_items:
+            indent_level = 0
+            for class_name in li.get("class", []):
+                if class_name.startswith("ql-indent-"):
+                    indent_level = int(class_name.split("-")[2])
+
+            # Ensure the stack has enough levels
+            while len(stack) <= indent_level:
+                stack.append([])
+
+            # Reduce stack if necessary
+            while len(stack) > indent_level + 1:
+                stack.pop()
+
+            if indent_level > 0 and stack[indent_level - 1]:
+                parent_li = stack[indent_level - 1][-1]  # Get last item in parent level
+                existing_sublist = parent_li.find(["ul", "ol"])
+                
+                if not existing_sublist:
+                    # Create a new nested list if none exists
+                    new_sublist = soup.new_tag(list_tag.name)
+                    parent_li.append(new_sublist)
+                else:
+                    new_sublist = existing_sublist  # Reuse existing nested list
+                
+                new_sublist.append(li)  # Move current LI into the nested list
+                stack[indent_level].append(li)  # Add to stack at correct level
+            else:
+                stack[0].append(li)  # Keep top-level items at root
+
+        # Clear the original list and append the corrected structure
+        list_tag.clear()
+        for item in stack[0]:
+            list_tag.append(item)
+
+    return str(soup)
+
+def fix_quill_nested_lists(html):
+    soup = BeautifulSoup(html, "html.parser")
+
+    for list_tag in soup.find_all(["ul", "ol"]):  # Process both ordered and unordered lists
+        list_items = list_tag.find_all("li", recursive=False)
+        stack = [[]]  # Stack for nested lists
+
+        for li in list_items:
+            indent_level = 0
+            for class_name in li.get("class", []):
+                if class_name.startswith("ql-indent-"):
+                    indent_level = int(class_name.split("-")[2])
+
+            # Ensure stack has enough levels
+            while len(stack) <= indent_level:
+                stack.append([])
+
+            # Reduce stack depth if needed
+            while len(stack) > indent_level + 1:
+                stack.pop()
+
+            if indent_level > 0 and stack[indent_level - 1]:
+                parent_li = stack[indent_level - 1][-1]
+                existing_sublist = parent_li.find(["ul", "ol"])
+
+                if not existing_sublist:
+                    # Use the same list type as the current parent
+                    new_sublist = soup.new_tag(list_tag.name)
+                    parent_li.append(new_sublist)
+                else:
+                    new_sublist = existing_sublist
+
+                new_sublist.append(li)  # Add nested <li> correctly
+                stack[indent_level].append(li)
+            else:
+                stack[0].append(li)
+
+        # Clear the original list and insert corrected structure
+        list_tag.clear()
+        for item in stack[0]:
+            list_tag.append(item)
+
+    return str(soup)
+
+
 @st.dialog("Confirm")
 def confirm_action(question, func, *args, **params):
     st.write(question)
@@ -121,7 +212,6 @@ def confirm_action(question, func, *args, **params):
         st.error(error)
 
 def scroll_to_here():
-    global ph
     st.markdown(f'<div id="scrolltohere"></div>', unsafe_allow_html=True)
     js_code = f"""<script style="display: none; ">
         window.onload = function() {{
@@ -132,3 +222,4 @@ def scroll_to_here():
         }};
     </script>"""
     components.html(js_code, height=0)
+    st.session_state['force rerun'] = True
