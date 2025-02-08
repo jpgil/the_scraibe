@@ -7,5 +7,10 @@ pyyaml
 mistune
 beautifulsoup4
 markdownify
+
+markdown_pdf
+linkify-it-py
+markdown-it-py[linkify,plugins]
+
 streamlit-quill
 -e .

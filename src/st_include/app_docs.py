@@ -128,6 +128,7 @@ def set_active_document(document):
     st.session_state["document_file"] = document
     st.session_state['last_active_id'] = ""
     set_editing_section_id(False)
+    set_selected_section_id(False)
 def active_document():
     return st.session_state["document_file"]
 

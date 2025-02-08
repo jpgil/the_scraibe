@@ -1,3 +1,4 @@
+import os 
 import time
 import streamlit as st
 import streamlit.components.v1 as components
@@ -9,7 +10,7 @@ import src.core as scraibe
 import markdownify
 
 # import markdown
-import mistune
+# import mistune
 
 def document_sanity_check(document_content):
     repaired = scraibe.repair_markdown_syntax(document_content)
@@ -83,7 +84,8 @@ def render_edit_section(document_filename, document_content, active_id, user_cur
     # --------
     section_content = scraibe.extract_section(document_content, active_id)
 
-    document_html = mistune.markdown(section_content)
+    # document_html = mistune.markdown(section_content)
+    document_html = scraibe.to_html(section_content)
     quill_output = st_quill(
         value=document_html,
         html=True,
@@ -172,8 +174,14 @@ def render_selected_section(document_content):
     if not section_id:
         return
 
-    with st_sidebar:
+    try:
         first_line = scraibe.extract_section(document_content, section_id).replace("#", "").splitlines()[0]
+    except:
+        app_docs.set_selected_section_id(False)
+        st.rerun()
+
+    with st_sidebar:
+
         st.code( first_line, wrap_lines=True )
         
         if app_users.can_edit():
@@ -192,7 +200,6 @@ def render_selected_section(document_content):
                     
     st_sidebar.markdown("---")
     
-
 
 def render_AI_document_tools():
     # General AI tools:
@@ -219,16 +226,53 @@ def render_AI_document_tools():
         st.text_input("Ask any question regarding your document")
         st.button("Ask your question")
 
+
+def render_download_options():
+    import tempfile
+    from markdown_pdf import MarkdownPdf, Section
+
+
     st.header("Download")
+    filename = app_docs.active_document()
+    content = scraibe.load_document_nolabels(filename)
+
     cols = st.columns(3)
     with cols[0]:
-        st.button("PDF", use_container_width=True)
+        if st.button("PDF", use_container_width=True):
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile: 
+                pdf = MarkdownPdf()
+                pdf.meta["title"] = 'Title'
+                pdf.add_section(Section(content, toc=False))
+                pdf.save(tmpfile.name)
+                st.session_state[f"generated_pdf_for_{filename}"] = tmpfile.name
+                
     with cols[1]:
-        st.button("docx", use_container_width=True)
-    with cols[2]:
-        st.button("MD", use_container_width=True)
-        
-        
+        if st.button("MD", use_container_width=True):
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".md", mode="w", encoding="utf-8") as tmpfile:
+                st.session_state[f"generated_md_for_{filename}"] = tmpfile.name
+                tmpfile.write(content) 
+
+    @st.dialog("Download the file")
+    def download_dialog(ftype, filename):
+        file = st.session_state[f"generated_{ftype}_for_{filename}"]
+        ftypename = app_docs.active_document()[:-3]+"."+ftype
+        with open(file, "rb") as f:
+            file_bytes = f.read()
+        if st.download_button(
+            label=f"Download {ftypename}",
+            data=file_bytes,
+            file_name=ftypename,
+            mime=f"application/{ftype}"
+        ):
+            os.remove(file)
+            del(st.session_state[f"generated_{ftype}_for_{filename}"])
+            st.rerun()
+   
+    if f"generated_pdf_for_{filename}" in st.session_state:
+        download_dialog("pdf", filename)
+    if f"generated_md_for_{filename}" in st.session_state:
+        download_dialog("md", filename)
+                
         
 if __name__ == "__main__":
     
@@ -259,18 +303,20 @@ if __name__ == "__main__":
 
     # Display sections
     # --------
-    st.code(f"""The document "{document_filename}" starts here""")
-    with st.container(border=True):
-        for section_id in document_sections:
-            st.markdown(f'<div id="section{section_id}"></div>', unsafe_allow_html=True)
-            if editing_section_id == section_id:
-                render_edit_section(document_filename, document_content, section_id, user_current)
-            else:
-                render_view_section(document_filename, document_content, section_id, user_current)
+    with st.expander(document_filename, expanded=True):
+        with st.container(border=False):
+            for section_id in document_sections:
+                st.markdown(f'<div id="section{section_id}"></div>', unsafe_allow_html=True)
+                if editing_section_id == section_id:
+                    render_edit_section(document_filename, document_content, section_id, user_current)
+                else:
+                    render_view_section(document_filename, document_content, section_id, user_current)
 
-    st.code(f"""The document "{document_filename}" ends here""")
-
-    render_AI_document_tools()
+    with st.expander("AI Writting Tools"):
+        render_AI_document_tools()
+    
+    with st.expander("Download formats"):
+        render_download_options()
 
     render_selected_section(document_content)
 
