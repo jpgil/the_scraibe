@@ -127,14 +127,19 @@ def filter_documents_for_user(username):
 def set_active_document(document):
     st.session_state["document_file"] = document
     st.session_state['last_active_id'] = ""
-    set_active_section_id(False)
+    set_editing_section_id(False)
 def active_document():
     return st.session_state["document_file"]
 
-def set_active_section_id(section_id):
-    st.session_state['active_sessions'] = section_id
-def active_section_id():
-    return st.session_state.get('active_sessions', '')
+def set_editing_section_id(section_id):
+    st.session_state['editing_section_id'] = section_id
+def editing_section_id():
+    return st.session_state.get('editing_section_id', '')
+
+def set_selected_section_id(section_id):
+    st.session_state['selected_section_id'] = section_id
+def selected_section_id():
+    return st.session_state.get('selected_section_id', '')
 
 
 #

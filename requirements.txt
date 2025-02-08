@@ -3,7 +3,7 @@ fastapi
 streamlit
 pytest
 pyyaml
-markdown
+#markdown
 mistune
 beautifulsoup4
 markdownify

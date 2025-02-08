@@ -9,31 +9,35 @@ import os
 import hashlib
 
 ph = None
-def sidebar(pagefilename):
+def render_sidebar(pagefilename):
     global ph
     st.set_page_config(layout="wide", page_title="the scrAIbe")
     _notify_show()
     """Sidebar for login/logout and user actions."""         
     
     with st.sidebar:
-        if "10-write.py" in pagefilename:
-            current_user = st.session_state.get("username")
-            filtered_docs = [""] + list(app_docs.filter_documents_for_user(current_user))
-            if filtered_docs:
-                if st.session_state.get("document_file") in filtered_docs:
-                    selected_document_index = filtered_docs.index(st.session_state["document_file"])
-                else:
-                    selected_document_index = 0
-                st.session_state["document_file"] = st.selectbox(
-                    "Choose a document to continue editing", 
-                    filtered_docs,
-                    index=selected_document_index
-                    )
+        # if "10-write.py" in pagefilename:
+        #     current_user = st.session_state.get("username")
+        #     filtered_docs = [""] + list(app_docs.filter_documents_for_user(current_user))
+        #     if filtered_docs:
+        #         if st.session_state.get("document_file") in filtered_docs:
+        #             selected_document_index = filtered_docs.index(st.session_state["document_file"])
+        #         else:
+        #             selected_document_index = 0
+        #         st.session_state["document_file"] = st.selectbox(
+        #             "Choose a document to continue editing", 
+        #             filtered_docs,
+        #             index=selected_document_index
+        #             )
+        
+        st_sidebar = st.container()
 
         if "logged_in" not in st.session_state:
             app_users.render_user_loggedout()
         else:
             app_users.render_user_loggedin()
+            
+        return st_sidebar
             
     ph = st.sidebar.container()
                     

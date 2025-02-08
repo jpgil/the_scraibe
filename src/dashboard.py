@@ -6,7 +6,7 @@ import src.st_include.app_docs as app_docs
 if __name__ == "__main__":
 
     # UI Setup
-    app_utils.sidebar(__file__)
+    app_utils.render_sidebar(__file__)
     
     col1, col2 = st.columns(2)
     with col1:

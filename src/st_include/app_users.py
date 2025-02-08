@@ -5,6 +5,7 @@ import hashlib
 import pandas as pd
 import time
 from src.st_include import app_utils
+from src.st_include import app_docs
 from datetime import datetime
 
 # Load users from YAML
@@ -116,8 +117,31 @@ def do_login(username, password):
         app_utils.notify(f"Welcome, {username}!")
         return True
 
+# Quick Information 
+# --------
+def _can_do_X(allowed_actions):
+    filename = app_docs.active_document()
+    if not filename or not Im_logged_in():
+        return False
+
+    user_current = st.session_state.get("username")
+
+    if not f"perm_for_{''.join(allowed_actions)}_{user_current}_{filename}" in st.session_state:
+        document_meta = app_docs.filter_documents_for_user(user_current).get(filename)
+        if not document_meta:
+            return False
+
+        perm = next((user["permission"] for user in document_meta["users"] if user["name"] == user_current), False)
+        st.session_state["perm_for_{''.join(allowed_actions)}_{user_current}_{filename}"] = perm in allowed_actions
+    return st.session_state["perm_for_{''.join(allowed_actions)}_{user_current}_{filename}"]
+
+def can_edit():
+    return _can_do_X(['editor', 'creator'])
+def can_view():
+    return _can_do_X(['viewer', 'editor', 'creator'])
+    
 def Im_admin():
-    return "role" in st.session_state and st.session_state["role"] == "admin"
+    return st.session_state and st.session_state.get("role") == "admin"
 
 def Im_logged_in():
     return "logged_in" in st.session_state
