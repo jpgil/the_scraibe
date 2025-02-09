@@ -3,6 +3,9 @@ fastapi
 streamlit
 pytest
 pyyaml
+langchain
+pydantic-settings
+
 #markdown
 mistune
 beautifulsoup4

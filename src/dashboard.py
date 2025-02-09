@@ -51,21 +51,24 @@ if __name__ == "__main__":
         
         current_user = st.session_state.get("username")
         filtered_docs = list(app_docs.filter_documents_for_user(current_user))
+        
         if filtered_docs:
-            st.subheader("Your documents", divider=False)
-            selected_file = st.selectbox("Choose a document to continue editing", [""] + filtered_docs)
-            if selected_file:
-                app_docs.set_active_document(selected_file)
-                st.switch_page("pages/10-write.py")
+            with st.expander("Your documents", expanded=True):
+                selected_file = st.selectbox("Choose a document to continue editing", [""] + filtered_docs)
+                if selected_file:
+                    app_docs.set_active_document(selected_file)
+                    st.switch_page("pages/10-write.py")
 
-        app_docs.render_document_create()
-        app_docs.render_document_upload()
+        with st.expander("Create & Upload", expanded=not filtered_docs):
+            app_docs.render_document_create()
+            app_docs.render_document_upload()
 
-        st.subheader("Documents Dashboard")
-        app_docs.render_document_management()
+        with st.expander("Documents Dashboard"):    
+            app_docs.render_document_management()
 
         if app_users.Im_admin():
-            app_users.render_user_management()
+            with st.expander("Admin"):
+                app_users.render_user_management()
             
     else:
         st.subheader("Don't have an user yet?")

@@ -179,7 +179,7 @@ def render_user_management():
         st.warning("You need admin access to manage users.")
         return
     
-    st.header("Admin Management")
+    # st.header("Admin Management")
 
     tab = st.tabs(["User List", "User Management", "Add User"])
     

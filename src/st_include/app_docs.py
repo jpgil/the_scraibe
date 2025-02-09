@@ -127,18 +127,25 @@ def filter_documents_for_user(username):
 def set_active_document(document):
     st.session_state["document_file"] = document
     st.session_state['last_active_id'] = ""
-    set_editing_section_id(False)
-    set_selected_section_id(False)
+    set_editing_section_id(False, False)
+    set_selected_section_id(False, False)
 def active_document():
     return st.session_state["document_file"]
 
-def set_editing_section_id(section_id):
+def set_editing_section_id(section_id, rerun=True):
+    #TODO: check that previous section has been saved
     st.session_state['editing_section_id'] = section_id
+    if rerun:
+        st.rerun()
+    
 def editing_section_id():
     return st.session_state.get('editing_section_id', '')
 
-def set_selected_section_id(section_id):
+def set_selected_section_id(section_id, rerun=True):
     st.session_state['selected_section_id'] = section_id
+    if rerun:
+        st.rerun()
+
 def selected_section_id():
     return st.session_state.get('selected_section_id', '')
 

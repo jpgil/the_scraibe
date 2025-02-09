@@ -14,4 +14,4 @@ font="sans serif"
 fastReruns = false
 
 [client]
-toolbarMode = "minimal"
+#toolbarMode = "minimal"

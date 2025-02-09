@@ -39,7 +39,7 @@ def is_section_locked(filename: str, section_id: str) -> str | None:
             lock_data = yaml.safe_load(f)
             return lock_data['user']
 
-    return None
+    return False
 
 def unlock_section(filename: str, section_id: str, user: str) -> bool:
     filename = os.path.basename(filename)

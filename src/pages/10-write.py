@@ -20,6 +20,7 @@ def document_sanity_check(document_content):
 
 
 def render_view_section(document_filename, document_content, section_id, user_current):
+    global st_sidebar
     active_id = app_docs.editing_section_id()
     
     cols = st.columns([8, 1])
@@ -45,12 +46,14 @@ def render_view_section(document_filename, document_content, section_id, user_cu
                     st.rerun()
                 else:
                     st.markdown(f' ```{lock_user}```')
+                    st_sidebar.markdown(f'⚠ ```Also editing: {lock_user}```')
+                    
             else:
                 # button EDIT
                 if app_users.can_edit():
                     if st.button(":feather:", key=f"edit_{section_id}", use_container_width=True):
                         app_docs.set_editing_section_id(section_id)
-                        app_docs.set_selected_section_id(section_id)
+                        # app_docs.set_selexcted_section_id(section_id)
                         st.rerun()
                         
                 # button TOOLS
@@ -58,11 +61,9 @@ def render_view_section(document_filename, document_content, section_id, user_cu
                 if selected_id != section_id:
                     if st.button("⬜", key=f"selected_id{section_id}"):
                         app_docs.set_selected_section_id(section_id)
-                        st.rerun()
                 else:
                     if st.button("☑️", key=f"selected_id{section_id}"):
                         app_docs.set_selected_section_id(None)
-                        st.rerun()
 
 
 def render_edit_section(document_filename, document_content, active_id, user_current):
@@ -75,7 +76,7 @@ def render_edit_section(document_filename, document_content, active_id, user_cur
     
     st.session_state['last_active_id'] = active_id
 
-    # utils.scroll_to_here()
+    app_utils.scroll_to_here()
     if not scraibe.lock_section(document_filename, active_id, user_current):
         app_docs.set_editing_section_id(False)
         app_utils.notify(f'Section already locked by {scraibe.is_section_locked(document_filename, active_id)}', switch=__file__)
@@ -128,52 +129,52 @@ def render_edit_section(document_filename, document_content, active_id, user_cur
     #     with cols[1]:
     #         st.code(new_markdown, wrap_lines=True)
 
-    js_code = """<script>
-    var iframe = parent.document.querySelector('iframe');
-    console.log("encontre iframes")
-    if (iframe) {
-    var doc = iframe.contentDocument || iframe.contentWindow.document;
-    var styleElement = doc.createElement('style');
-    styleElement.textContent = `
-        .ql-editor {
-            /* height: 400px !important;  /* Full viewport height */
-            /* overflow: auto !important; /* Enable scrolling */
-            font-family: "Source Sans Pro", sans-serif;
-            font-size: 0.9rem;
-            color: rgb(81, 83, 95);
-            line-height: 1.5;
-        }
-        .ql-container.ql-snow {
-            /*height: 425px;*/
-        }
-        .ql-editor p,
-        .ql-editor ul,
-        .ql-editor ol {
-            margin-bottom: 1em;
-        }
-        .ql-editor h1,
-        .ql-editor h2,
-        .ql-editor h3,
-        .ql-editor h4,
-        .ql-editor h5 {
-            margin-bottom: 1em;
-            font-weight: bold;            
-        }        
-    `;
-    doc.head.appendChild(styleElement);
-    console.log("He agregado el elemento")
-    }        </script>"""
-    time.sleep(0.1)
-    components.html(js_code, height=0)
+    def quill_js():
+        js_code = """<script>
+        var iframe = parent.document.querySelector('iframe');
+        console.log("encontre iframes")
+        if (iframe) {
+        var doc = iframe.contentDocument || iframe.contentWindow.document;
+        var styleElement = doc.createElement('style');
+        styleElement.textContent = `
+            .ql-editor {
+                /* height: 400px !important;  /* Full viewport height */
+                /* overflow: auto !important; /* Enable scrolling */
+                font-family: "Source Sans Pro", sans-serif;
+                font-size: 0.9rem;
+                color: rgb(81, 83, 95);
+                line-height: 1.5;
+            }
+            .ql-container.ql-snow {
+                /*height: 425px;*/
+            }
+            .ql-editor p,
+            .ql-editor ul,
+            .ql-editor ol {
+                margin-bottom: 1em;
+            }
+            .ql-editor h1,
+            .ql-editor h2,
+            .ql-editor h3,
+            .ql-editor h4,
+            .ql-editor h5 {
+                margin-bottom: 1em;
+                font-weight: bold;            
+            }        
+        `;
+        doc.head.appendChild(styleElement);
+        console.log("He agregado el elemento")
+        }        </script>"""
+        time.sleep(0.1)
+        components.html(js_code, height=0)
+    app_utils.run_at_bottom(quill_js)
 
 
 def render_selected_section(document_content):
     global st_sidebar
-    document_sections = scraibe.list_sections(document_content)
     section_id = app_docs.selected_section_id()
     if not section_id:
         return
-
     try:
         first_line = scraibe.extract_section(document_content, section_id).replace("#", "").splitlines()[0]
     except:
@@ -181,22 +182,28 @@ def render_selected_section(document_content):
         st.rerun()
 
     with st_sidebar:
+        st.markdown(f"""
+```
+{first_line}
+                    """)        
+        cols = st.columns([1,1])
+        document_sections = scraibe.list_sections(document_content)
+        if cols[0].button("☑️ Unselect", key=f"unselect2_{section_id}", use_container_width=True):
+            app_docs.set_selected_section_id(False)
 
-        st.code( first_line, wrap_lines=True )
-        
-        if app_users.can_edit():
-            cols = st.columns([1,4])
-            # Avoid remove first section
+        if app_users.can_edit():                
             if section_id != document_sections[0]:
-                if cols[0].button("🗑️", key=f"remove2_{section_id}", use_container_width=True):
-                    # scraibe.delete_section(document_active, section_id, current_user)
+                if cols[1].button("❌ Delete", key=f"remove2_{section_id}", use_container_width=True):
                     app_utils.confirm_action(
                         "Delete this section?", 
                         scraibe.delete_section, 
                         document_filename, section_id, user_current)
-            if cols[1].button("↔️ Organize TOC", use_container_width=True):
-                app_utils.notify("Not Implemented Yet")
-                
+        
+        AI_section_toolslist = ['Analyse content', 'Suggest content', 'Versions', 'Your role']
+        cols = st.columns([3,1])
+        selected_AI_section_toolslist = cols[0].selectbox('AI section', AI_section_toolslist, label_visibility="collapsed")
+        if cols[1].button("💡 AI"):
+            st.write(f"Your selected AI tool is {AI_section_toolslist}.\n Here we will write the output of the tool.")
                     
     st_sidebar.markdown("---")
     
@@ -244,17 +251,21 @@ def render_download_options():
                 pdf.meta["title"] = 'Title'
                 pdf.add_section(Section(content, toc=False))
                 pdf.save(tmpfile.name)
-                st.session_state[f"generated_pdf_for_{filename}"] = tmpfile.name
+                st.session_state[f"generated_ftype_for_{filename}"] = tmpfile.name
                 
     with cols[1]:
         if st.button("MD", use_container_width=True):
             with tempfile.NamedTemporaryFile(delete=False, suffix=".md", mode="w", encoding="utf-8") as tmpfile:
-                st.session_state[f"generated_md_for_{filename}"] = tmpfile.name
                 tmpfile.write(content) 
+                st.session_state[f"generated_ftype_for_{filename}"] = tmpfile.name
 
     @st.dialog("Download the file")
-    def download_dialog(ftype, filename):
-        file = st.session_state[f"generated_{ftype}_for_{filename}"]
+    def download_dialog():
+        global document_filename
+        file = st.session_state.get(f"generated_ftype_for_{document_filename}")
+        if not file:
+            st.rerun()
+        ftype = file.split(".")[-1]
         ftypename = app_docs.active_document()[:-3]+"."+ftype
         with open(file, "rb") as f:
             file_bytes = f.read()
@@ -265,13 +276,16 @@ def render_download_options():
             mime=f"application/{ftype}"
         ):
             os.remove(file)
-            del(st.session_state[f"generated_{ftype}_for_{filename}"])
+            st.session_state[f"generated_ftype_for_{document_filename}"] = False
+            st.rerun()
+        if st.button("Cancel"):
+            os.remove(file)
+            st.session_state[f"generated_ftype_for_{document_filename}"] = False
             st.rerun()
    
-    if f"generated_pdf_for_{filename}" in st.session_state:
-        download_dialog("pdf", filename)
-    if f"generated_md_for_{filename}" in st.session_state:
-        download_dialog("md", filename)
+    if st.session_state.get(f"generated_ftype_for_{document_filename}"):
+        # app_utils.run_at_bottom(download_dialog)
+        download_dialog()
                 
         
 if __name__ == "__main__":
@@ -286,7 +300,7 @@ if __name__ == "__main__":
         app_utils.notify("Select a document to write", switch="dashboard.py")
     if not app_users.can_view():
         app_utils.notify("Not authorized", switch="dashboard.py")
-        
+    
     user_current = st.session_state.get("username")   
 
     # All good, let's show it
@@ -312,7 +326,7 @@ if __name__ == "__main__":
                 else:
                     render_view_section(document_filename, document_content, section_id, user_current)
 
-    with st.expander("AI Writting Tools"):
+    with st.expander("💡 AI Writting Tools"):
         render_AI_document_tools()
     
     with st.expander("Download formats"):
@@ -321,9 +335,4 @@ if __name__ == "__main__":
     render_selected_section(document_content)
 
 
-    if st.session_state.get("force rerun"):
-        import time
-        del(st.session_state['force rerun'])
-        st.code("Re run")
-        time.sleep(0.5)
-        st.rerun()
+    app_utils.render_bottom_page()

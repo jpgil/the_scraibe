@@ -1,8 +1,10 @@
 import streamlit as st
 import streamlit.components.v1 as components
+from bs4 import BeautifulSoup
 import time
 import src.st_include.app_users as app_users
 import src.st_include.app_docs as app_docs
+import random
 
 import yaml
 import os
@@ -10,28 +12,18 @@ import hashlib
 
 ph = None
 def render_sidebar(pagefilename):
+    """Sidebar for login/logout and user actions."""         
     global ph
     st.set_page_config(layout="wide", page_title="the scrAIbe")
+
+    # Show notifications with notify(msg)
     _notify_show()
-    """Sidebar for login/logout and user actions."""         
     
     with st.sidebar:
-        # if "10-write.py" in pagefilename:
-        #     current_user = st.session_state.get("username")
-        #     filtered_docs = [""] + list(app_docs.filter_documents_for_user(current_user))
-        #     if filtered_docs:
-        #         if st.session_state.get("document_file") in filtered_docs:
-        #             selected_document_index = filtered_docs.index(st.session_state["document_file"])
-        #         else:
-        #             selected_document_index = 0
-        #         st.session_state["document_file"] = st.selectbox(
-        #             "Choose a document to continue editing", 
-        #             filtered_docs,
-        #             index=selected_document_index
-        #             )
-        
+        # This container can be modified from the page later        
         st_sidebar = st.container()
 
+        # Login line
         if "logged_in" not in st.session_state:
             app_users.render_user_loggedout()
         else:
@@ -48,7 +40,6 @@ def notify(msg, switch=False):
         st.session_state['notify_channel'].append(msg)
 
     if switch:
-        # st.rerun()
         st.switch_page(switch)
         st.stop()
     else:
@@ -62,39 +53,7 @@ def _notify_show():
         st.session_state['notify_channel'] = []    
         
         
-# QUILL_TOOLBAR = [
-#     [
-#         "bold", "italic", "underline", "strike",
-#         {"script": "sub"},
-#         {"script": "super"},
-#     ],
-#     [
-#         {"background": []},
-#         {"color": [] },
-#     ],          
-#     [
-#         {"list": "ordered"},
-#         {"list": "bullet"},
-#         {"indent": "-1"},
-#         {"indent": "+1"},
-#         {"align": []},
-#     ],
-#     [
-#         {"header": 1},
-#         {"header": 2},
-#         {"header": [1, 2, 3, 4, 5, 6, False]},
-#         {"size": ["small", False, "large", "huge"]},
-#     ],
-#     [
-#         "formula", "blockquote", "code", "code-block", "clean"
-#     ],
-#     [
-#         "link", "image"
-#     ],
-#     [
-#         {"font": []}
-#     ],
-# ]
+
 QUILL_MARKDOWN_TOOLBAR = [
     ["bold", "italic", "strike", "code"],  # Basic formatting
     [{"header": [1, 2, 3, 4, 5, 6, False]}],  # Headers (H1, H2, H3)
@@ -103,52 +62,6 @@ QUILL_MARKDOWN_TOOLBAR = [
     ["link", "image"],  # Links and images
     ["clean"],  # Remove formatting
 ]
-
-
-from bs4 import BeautifulSoup
-def fix_quill_nested_lists_v1(html):
-    soup = BeautifulSoup(html, "html.parser")
-
-    for list_tag in soup.find_all(["ul", "ol"]):  # Find all lists
-        list_items = list_tag.find_all("li", recursive=False)  # Get only top-level LIs
-        stack = [[]]  # Stack to track nesting levels
-
-        for li in list_items:
-            indent_level = 0
-            for class_name in li.get("class", []):
-                if class_name.startswith("ql-indent-"):
-                    indent_level = int(class_name.split("-")[2])
-
-            # Ensure the stack has enough levels
-            while len(stack) <= indent_level:
-                stack.append([])
-
-            # Reduce stack if necessary
-            while len(stack) > indent_level + 1:
-                stack.pop()
-
-            if indent_level > 0 and stack[indent_level - 1]:
-                parent_li = stack[indent_level - 1][-1]  # Get last item in parent level
-                existing_sublist = parent_li.find(["ul", "ol"])
-                
-                if not existing_sublist:
-                    # Create a new nested list if none exists
-                    new_sublist = soup.new_tag(list_tag.name)
-                    parent_li.append(new_sublist)
-                else:
-                    new_sublist = existing_sublist  # Reuse existing nested list
-                
-                new_sublist.append(li)  # Move current LI into the nested list
-                stack[indent_level].append(li)  # Add to stack at correct level
-            else:
-                stack[0].append(li)  # Keep top-level items at root
-
-        # Clear the original list and append the corrected structure
-        list_tag.clear()
-        for item in stack[0]:
-            list_tag.append(item)
-
-    return str(soup)
 
 def fix_quill_nested_lists(html):
     soup = BeautifulSoup(html, "html.parser")
@@ -215,15 +128,51 @@ def confirm_action(question, func, *args, **params):
     if error:
         st.error(error)
 
-def scroll_to_here():
-    st.markdown(f'<div id="scrolltohere"></div>', unsafe_allow_html=True)
-    js_code = f"""<script style="display: none; ">
-        window.onload = function() {{
-            var element = parent.document.getElementById("scrolltohere");
-            if (element) {{
-                element.scrollIntoView({{ behavior: "smooth", block: "start" }});
-            }}
-        }};
-    </script>"""
-    components.html(js_code, height=0)
-    st.session_state['force rerun'] = True
+# Scroll to here
+# --------------
+def scroll_to_here(anchor=""):
+    global _last_scroll_to_here
+    if not anchor:
+        anchor = f"anchor{str(random.randint(100000, 999999))}"
+    
+    # Write the anchor
+    st.markdown(f'<div id="{anchor}></div>', unsafe_allow_html=True)
+    
+    # Prepare to scroll to here
+    _last_scroll_to_here = anchor
+    
+    # Schedule for later
+    run_at_bottom(_scroll_to_here_last_call)
+
+def _scroll_to_here_last_call():
+    """Ensure the only one scroll to here is invoked"""
+    global _last_scroll_to_here, _scroll_to_here_max_runs
+    if _last_scroll_to_here and _scroll_to_here_max_runs>0:
+        _scroll_to_here_max_runs -= 1
+        js_code = f"""<script style="display: none; ">
+            window.onload = function() {{
+                var element = parent.document.getElementById("{_last_scroll_to_here}");
+                if (element) {{
+                    element.scrollIntoView({{ behavior: "smooth", block: "start" }});
+                }}
+            }};
+        </script>"""
+        components.html(js_code, height=0)
+        st.code(f"Just wrote {js_code}", wrap_lines=True)
+_scroll_to_here_max_runs = 1
+_last_scroll_to_here = ""
+
+
+
+_bottom_streamlit = []
+def run_at_bottom(x):
+    global _bottom_streamlit
+    _bottom_streamlit.append(x)
+    
+def render_bottom_page():
+    """Write the components at the end"""
+    global _bottom_streamlit
+    for st_piece in _bottom_streamlit:
+        st_piece()
+        
+    
