@@ -117,8 +117,12 @@ def do_login(username, password):
         app_utils.notify(f"Welcome, {username}!")
         return True
 
+
+#
 # Quick Information 
-# --------
+# -----------------
+#
+
 def _can_do_X(allowed_actions):
     filename = app_docs.active_document()
     if not filename or not Im_logged_in():
@@ -145,6 +149,16 @@ def Im_admin():
 
 def Im_logged_in():
     return "logged_in" in st.session_state
+
+def user():
+    return st.session_state.get("username")
+
+
+
+#
+# Renders for Streamlit
+# ---------------------
+#
 
 def render_user_loggedin():
     if st.button(f"Logout {st.session_state['username']}"):

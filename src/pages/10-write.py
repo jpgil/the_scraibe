@@ -6,6 +6,8 @@ from streamlit_quill import st_quill
 from src.st_include import app_utils
 from src.st_include import app_users
 from src.st_include import app_docs
+from src.st_include import app_ai
+
 import src.core as scraibe
 import markdownify
 
@@ -121,14 +123,6 @@ def render_edit_section(document_filename, document_content, active_id, user_cur
             else:
                 cancel_editing()
 
-    # # Dev option
-    # if st.checkbox("(dev) original / modified markdown"):
-    #     cols = st.columns(2)
-    #     with cols[0]:
-    #         st.code(section_content, wrap_lines=True)
-    #     with cols[1]:
-    #         st.code(new_markdown, wrap_lines=True)
-
     def quill_js():
         js_code = """<script>
         var iframe = parent.document.querySelector('iframe');
@@ -208,30 +202,29 @@ def render_selected_section(document_content):
     st_sidebar.markdown("---")
     
 
-def render_AI_document_tools():
+def render_AI_document_tools(*args, **kwargs):
     # General AI tools:
     # -------------            
+    document_content = kwargs["document_content"]
     # Create tabs
     st.header("AI tools")
-    tab1, tab2, tab3, tab4 = st.tabs(["Style", "Reviewer", "Grammar", "Questions"])
+    tablist = {
+        "Grammar": app_ai.render_review_grammar,
+        "Configure AI": app_ai.render_configure_AI,
+        "Reviewer" : app_ai.render_none,
+        "Questions": app_ai.render_none,
+    }
+    
+    tabs = st.tabs(tablist.keys())
 
-    # Download Tab
-    with tab1:
-        st.text_input("Define the style")
-        st.button("Check the style")
-    # Reviewer Tab
-    with tab2:
-        st.text_input("Describe who will assess your document")
-        st.button("Ask reviewer")
+    # Style Tab
+    for i in range(len(tablist)):
+        with tabs[i]:
+            key = list(tablist.keys())[i]
+            # st.subheader(key)
+            tablist[key](st_sidebar=st_sidebar, document_content=document_content)
 
-    # Grammar Tab
-    with tab3:
-        st.button("Review grammar")
 
-    # Questions Tab
-    with tab4:
-        st.text_input("Ask any question regarding your document")
-        st.button("Ask your question")
 
 
 def render_download_options():
@@ -327,7 +320,8 @@ if __name__ == "__main__":
                     render_view_section(document_filename, document_content, section_id, user_current)
 
     with st.expander("💡 AI Writting Tools"):
-        render_AI_document_tools()
+        render_AI_document_tools(document_content=document_content)
+
     
     with st.expander("Download formats"):
         render_download_options()

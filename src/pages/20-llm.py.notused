@@ -1,6 +1,7 @@
 import streamlit as st
 from src.core.llm import *
 
+st.stop()
 
 sample_md = """
 # M1 Forces 🦾

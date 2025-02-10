@@ -1,12 +1,14 @@
 from pydantic_settings import BaseSettings # NEW
-
+#
 class Settings(BaseSettings):
     # Private keys for LLM providers
-    openai_api_key: str = None
-    gemini_api_key: str = None
+    openai_api_key: str = ""
+    gemini_api_key: str = ""
     
     # Choose the LLM provider: "openai" or "gemini"
     llm_provider: str = "openai"
+    
+    llm_model: str = "gpt-4o-mini"
 
     class Config:
         # Loads variables from a .env file in the current directory

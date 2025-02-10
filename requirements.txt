@@ -4,6 +4,7 @@ streamlit
 pytest
 pyyaml
 langchain
+langchain[openai,groq,mistralai]
 pydantic-settings
 
 #markdown
