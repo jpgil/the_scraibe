@@ -9,10 +9,12 @@ def set_ai_result(category, json) -> None:
     filename = app_docs.active_document()
     st.session_state[f'ai_{filename}_{category}'] = json
 
-def ai_result(category) -> list:
+def ai_result(category) -> list | dict:
     filename = app_docs.active_document()
     result = st.session_state.get(f'ai_{filename}_{category}', [])
-    return result if isinstance(result, list) else []
+    return result
+    # st.write(type(result))
+    # return result if isinstance(result, list) or isinstance(result, dict) else []
 
 
 def infer_section_id(content, original):
@@ -36,10 +38,10 @@ def llm_grammar(content):
 #
 
 
-def render_none(*args, **kwargs):
+def render_none(*args, **kwargs) -> None:
     st.warning("Not implemented yet")
     
-def render_configure_AI(*args, **kwargs):
+def render_configure_AI(*args, **kwargs) -> None:
     
     with st.form(key=__name__, border=False):
         st.write("The configurations below is optional and overrides default behaviour.")
@@ -68,11 +70,12 @@ def render_configure_AI(*args, **kwargs):
             st.info("Configuration saved")
         
 
-def render_review_grammar(*args, **kwargs):
+def render_review_grammar(*args, **kwargs) -> None:
     filename = app_docs.active_document()
     document_content = kwargs['document_content']
     if st.button("Review Grammar and Sintaxis"):
-        json_result = scraibe.llm.review_grammar(document_content)#llm_grammar(content)
+        with st.spinner("Let AI think ..."):
+            json_result = scraibe.llm.review_grammar(document_content)#llm_grammar(content)
         set_ai_result('grammar', json_result)
     
     for entry in ai_result('grammar'):
@@ -84,7 +87,7 @@ def render_review_grammar(*args, **kwargs):
         section_id = infer_section_id(document_content, original)
 
         if original in document_content:
-            st.markdown(f'In **{section_title}** ({section_id})')
+            st.markdown(f'In **{section_title}**')
             cols = st.columns([4,4,1])
             with cols[0]:
                 st.code(original, wrap_lines=True, language=None)
@@ -108,3 +111,26 @@ def render_review_grammar(*args, **kwargs):
                     st.code(scraibe.extract_section(document_content, section_id), wrap_lines=True)
                 except:
                     st.error(f"{section_id} also not found")
+
+def render_content_assessment(*args, **kwargs) -> None:
+    filename = app_docs.active_document()
+    document_content = kwargs['document_content']
+    if st.button("Content Assessment"):
+        with st.spinner("Let AI think ..."):
+            json_result = scraibe.llm.extract_content_assessment(document_content)#llm_grammar(content)
+        set_ai_result('Assessment', json_result)
+    
+    criteria = ai_result('Assessment')
+    # st.write(criteria)
+    if len(criteria):
+        st.markdown("### Summary")
+        st.markdown(f"**Type of document**: {criteria['type_of_document']}")
+        st.markdown(f"**Purpose**: {criteria['purpose']}")
+        st.markdown(f"**Expected content**: {criteria['expected_content']}")
+        for i in range(5):
+            try:
+                st.markdown(f"### {criteria['criteria'][i]}")
+                st.markdown(criteria['assessment'][i])
+                st.markdown(f"*{criteria['recommendations'][i]}*")
+            except:
+                st.warning("Ahem... some AI answer was not right, try again.")

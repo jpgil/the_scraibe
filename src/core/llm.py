@@ -19,7 +19,7 @@ from settings import settings
 # https://python.langchain.com/docs/introduction/
 if settings.llm_provider.lower() == "openai":
     os.environ["OPENAI_API_KEY"] = settings.openai_api_key
-    default_llm = ChatOpenAI(temperature=1, model=settings.llm_model)
+    default_llm = ChatOpenAI(temperature=0.7, model=settings.llm_model)
     
 else:
     raise ValueError(f"Unsupported LLM provider: {settings.llm_provider}")
@@ -29,19 +29,17 @@ import re
 
 
 def recover_json(input_string):
-    # Try to extract content between square brackets []
-    match = re.search(r'\[(.*)\]', input_string, re.DOTALL)
+    # Attempt to extract JSON content (either array or object)
+    match = re.search(r'(\[.*\]|\{.*\})', input_string, re.DOTALL)
+    
     if match:
-        json_str = match.group(0)  # Get the whole content including the brackets
+        json_str = match.group(1)  # Extract matched JSON content
         try:
-            # Parse the extracted string to JSON
-            return json.loads(json_str)
+            return json.loads(json_str)  # Parse JSON
         except json.JSONDecodeError:
-            print("Invalid JSON format after extraction.")
-            return None
-    else:
-        print("No valid JSON array found.")
-        return None
+            return None  # Invalid JSON
+    return None  # No valid JSON found
+
 
 
 
@@ -128,9 +126,6 @@ Section Content:
 
 
 
-# Perform a a grammar and sintax checking in {lang} of the document below, including section names if needed. Select the minimum context to be understable, around twenty words. Keep the same style and tone in the corrections, ignore literals in case of programming examples. Consider that some documents could have no grammar or sintax problems at all, if nothing is found don't hallucinate please. If no important problems are found, return an empty list []
-
-# Also, consider that the document could have non-sense phrases in the middle, or typographic errors. This should be marked and suggestions to be done including remove the content.
     def review_grammar(self ,content: str) -> dict:
         prompt = """
 Your role in the review of this document is: Grammar and sintax reviewer in native {lang} language.
@@ -162,24 +157,6 @@ The content to be analyzed is below:
 
 The generated JSON is:
 """
-#         prompt = """
-# Your role in the review of this document is: {role}
-# Document purpose: {purpose}
-
-# Perform a grammar and sintaxis checking in {lang} of the document below, focus on minimal changes to make it correct. Write just the results in markdown, no extra titles or phrases. For each result use a classic "Where it says" / "it should say" convention and always remark corrections in bold format, as in this example:
-
-# In section **[section name]**
-#   * Where it says: ... This allows **reusing** of any study or tool applied to a specific instrument with **low** effort ...
-#   * It should say: ... This allows **for the reuse** of any study or tool applied to a specific instrument with **little** effort ...
-
-  
-# The content to be analyzed is below:
-# ========================
-# {content}
-# ========================
-
-# Now provide the section/corrections:
-# """
 
         prompt_template = PromptTemplate(
             input_variables=["role", "purpose", "lang", "content"],
@@ -201,6 +178,48 @@ The generated JSON is:
         overall_hint = self.analyze_overall(markdown_text)
         return overall_hint
     
+    
+    def extract_content_assessment(self, document_content: str) -> dict:
+        prompt = """
+Based on your role in the review of this document: "{role}"
+And the partial declared purpose of {purpose}
+
+You will be provided a document in preparation. 
+
+1. Infer what type of document it is, inferring possible audience and distribution
+2. Infer the general purpose of this kind of documents
+3. Write a short paragraph on what the content of a document of this type should have
+4. Based on 1. and 2. and in my role of {role}, define 5 criterias to evaluate its content.
+5. For each criteria, write a paragraph with one of [👌 achieved, 😐 partially achieved, 🔧 to be improved], followed by the assessment of the criteria
+6. For each criteria, write a paragraph with recommendations, howver if the assessment is overall positive then a "nothing to change" is a valid answer too.
+
+The result must be written in JSON with exactly these text fields:
+
+- purpose: str
+- type_of_document: str
+- expected_content: str
+- criteria: list of five str
+- assessment: list of five str
+- recommendations: list of five str
+
+Return the results in language = {lang}
+
+The document to be analyzed is below:
+========================
+{content}
+========================
+
+The generated JSON is:
+"""
+
+        prompt_template = PromptTemplate(
+            input_variables=["role", "purpose", "lang", "content"],
+            template=prompt
+        )
+        chain = LLMChain(llm=self.llm, prompt=prompt_template)
+        result = chain.run(role=self.my_role, purpose=self.purpose, lang=self.lang, content=document_content)
+        return recover_json(result)    
+        # return result
     
     
 llm = LLMDocumentAgent(

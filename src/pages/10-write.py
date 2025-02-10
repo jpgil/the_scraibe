@@ -210,9 +210,9 @@ def render_AI_document_tools(*args, **kwargs):
     st.header("AI tools")
     tablist = {
         "Grammar": app_ai.render_review_grammar,
-        "Configure AI": app_ai.render_configure_AI,
-        "Reviewer" : app_ai.render_none,
+        "Content Assessment" : app_ai.render_content_assessment,
         "Questions": app_ai.render_none,
+        "Configure AI": app_ai.render_configure_AI,
     }
     
     tabs = st.tabs(tablist.keys())
