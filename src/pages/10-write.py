@@ -14,6 +14,8 @@ import markdownify
 # import markdown
 # import mistune
 
+# https://www.webfx.com/tools/emoji-cheat-sheet/
+
 def document_sanity_check(document_content):
     repaired = scraibe.repair_markdown_syntax(document_content)
     if repaired != document_content:
@@ -42,6 +44,8 @@ def render_view_section(document_filename, document_content, section_id, user_cu
     with cols[1]:
         with st.container(border=True):
             lock_user = scraibe.is_section_locked(document_filename, section_id)
+
+            # Display locked status or unlock if the current user is the locker.
             if lock_user:
                 if lock_user == user_current:
                     scraibe.unlock_section(document_filename, section_id, user_current)
@@ -49,23 +53,19 @@ def render_view_section(document_filename, document_content, section_id, user_cu
                 else:
                     st.markdown(f' ```{lock_user}```')
                     st_sidebar.markdown(f'⚠ ```Also editing: {lock_user}```')
-                    
             else:
-                # button EDIT
-                if app_users.can_edit():
-                    if st.button(":feather:", key=f"edit_{section_id}", use_container_width=True):
+                # Edit button
+                if app_users.can_edit() and st.button(":feather:", key=f"edit_{section_id}", use_container_width=True):
                         app_docs.set_editing_section_id(section_id)
                         # app_docs.set_selexcted_section_id(section_id)
                         st.rerun()
-                        
-                # button TOOLS
+
+                # Tools button
                 selected_id = app_docs.selected_section_id()
-                if selected_id != section_id:
-                    if st.button("⬜", key=f"selected_id{section_id}"):
-                        app_docs.set_selected_section_id(section_id)
-                else:
-                    if st.button("☑️", key=f"selected_id{section_id}"):
-                        app_docs.set_selected_section_id(None)
+                is_selected = selected_id == section_id
+                if st.button("☑️" if is_selected else "⬜", key=f"select_id_{section_id}"):
+                    new_selected_id = None if is_selected else section_id
+                    app_docs.set_selected_section_id(new_selected_id)
 
 
 def render_edit_section(document_filename, document_content, active_id, user_current):
