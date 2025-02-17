@@ -30,7 +30,7 @@ if __name__ == "__main__":
             .hero-tagline {
                 font-size: 40px;
                 font-weight: bold;
-                color: #2E86C1;
+                color: #FF4B4B;
             }
 
             </style>
@@ -51,7 +51,6 @@ if __name__ == "__main__":
 
         
         filtered_docs = list(app_docs.filter_documents_for_user(app_users.user()))
-        
         if filtered_docs:
             with st.expander("Your documents", expanded=True):
                 selected_file = st.selectbox("Choose a document to continue editing", [""] + filtered_docs)
@@ -70,13 +69,16 @@ if __name__ == "__main__":
             # st.selectbox("lolo", [1,2,3]) 
             app_docs.render_document_management()
 
+        with st.expander("Change Password"): 
+            app_users.render_change_my_password()
+
         if app_users.Im_admin():
             with st.expander("Admin"):
                 app_users.render_user_management()
             
     else:
         st.subheader("Don't have an user yet?")
-        st.write("Create your user")
+        app_users.render_create_user()
 
     # Check if no users exist in the YAML file
     if not app_users.load_users():

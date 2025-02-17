@@ -45,7 +45,7 @@ def recover_json(input_string):
 
 
 class LLMDocumentAgent:
-    def __init__(self, user_role: str="", purpose: str="", lang: str="", llm=None):
+    def __init__(self, role: str="", purpose: str="", lang: str="", llm=None):
         """
         Initialize the document analysis agent.
 
@@ -53,7 +53,7 @@ class LLMDocumentAgent:
         :param document_purpose: The intended purpose of analyzing the document.
         :param llm: Optional LLM instance; if not provided, a default is used based on settings.
         """
-        self.my_role = user_role
+        self.role = role
         self.purpose = purpose
         self.lang = lang
         self.llm = llm if llm is not None else default_llm
@@ -63,7 +63,7 @@ class LLMDocumentAgent:
     #     """
     #     Update the agent's configuration.
     #     """
-    #     self.my_role = your_role
+    #     self.role = your_role
     #     self.document_purpose = document_purpose
     #     self.lang = lang
 
@@ -76,7 +76,7 @@ class LLMDocumentAgent:
         :return: Analysis result as a string.
         """
         prompt = f"""
-Your role is: {self.my_role}
+Your role is: {self.role}
 Document purpose: {self.purpose}
 
 Perform an overall analysis of the following markdown document:
@@ -107,7 +107,7 @@ Perform an overall analysis of the following markdown document:
             return f"Section '{section_title}' not found in the document."
 
         prompt = f"""
-Your role is: {self.my_role}
+Your role is: {self.role}
 Document purpose: {self.purpose}
 
 Perform a detailed analysis on the following section extracted from a markdown document:
@@ -164,7 +164,7 @@ The generated JSON is:
         )
         chain = LLMChain(llm=self.llm, prompt=prompt_template)
         # result = chain.run(section=section_text)
-        result = chain.run(role=self.my_role, purpose=self.purpose, lang=self.lang, content=content)
+        result = chain.run(role=self.role, purpose=self.purpose, lang=self.lang, content=content)
         return recover_json(result)
         
 
@@ -217,45 +217,29 @@ The generated JSON is:
             template=prompt
         )
         chain = LLMChain(llm=self.llm, prompt=prompt_template)
-        result = chain.run(role=self.my_role, purpose=self.purpose, lang=self.lang, content=document_content)
+        result = chain.run(role=self.role, purpose=self.purpose, lang=self.lang, content=document_content)
         return recover_json(result)    
         # return result
     
     
+    def create_content(self, title: str) -> str:
+        prompt = """
+You are a {role} with the purpose: "{purpose}".
+The document must be written in language: {lang}
+You are asked to create the barebones of a markdown document with title: "{title}". Infer the best style of writting and fill with some few initial content, leaving placeholders for the user to fill in the rest.
+"""
+        prompt_template = PromptTemplate(
+            input_variables=["role", "purpose", "title", "lang"],
+            template=prompt
+        )
+        chain = LLMChain(llm=self.llm, prompt=prompt_template)
+        result = chain.run(role=self.role, purpose=self.purpose, title=title, lang=self.lang)
+        print(result)
+        return result
+    
+    
 llm = LLMDocumentAgent(
-    user_role="Expert in the topic of the document",
+    role="Expert in the topic of the document",
     purpose="Inferred from the document",
     lang="Inferred from the document"
 )
-
-# # Example usage when running this module directly
-# if __name__ == "__main__":
-#     sample_md = """
-# # M1 Forces 🦾
-
-# Web interface for M1 forces analysis done by Paranal Optics. This project is part of the ESO - Summer Internship Program 2025, Paranal Software Group.
-
-# ## Deployment
-# Run on: http://dev1-dev.pl.eso.org:8555
-
-# ## Usage
-# - **Choose TAR:** Select a TAR file from historical data.
-# - **Upload New TAR File:** Upload a TAR file from your local storage.
-# - **Run Program:** Execute the program to generate results (graphs and CSV data).
-# - **Display Available Data:** Access previously processed files.
-
-# ## Focus Mapping
-# Similar to M1 Forces, with additional files such as:
-# - .aberresult file
-# - .defocusdata file
-# - .fitAberrations file
-# """
-#     agent = LLMDocumentAgent(
-#         your_role="Document Analysis Expert",
-#         document_purpose="Provide hints and guidance for document usage and development"
-#     )
-#     overall_analysis = agent.analyze_overall(sample_md)
-#     print("Overall Analysis:\n", overall_analysis)
-
-#     usage_analysis = agent.analyze_section(sample_md, "Usage")
-#     print("\nSection Analysis (Usage):\n", usage_analysis)

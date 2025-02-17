@@ -49,7 +49,7 @@ def render_configure_AI(*args, **kwargs) -> None:
         langs = ["Inferred from the document", "English", "Español", "Français", "Deutsch"]
 
         lang_selected = langs.index(scraibe.llm.lang) if scraibe.llm.lang in langs else 0
-        scraibe.lang = st.selectbox("[optional] Document language", langs, index=lang_selected)
+        scraibe.llm.lang = st.selectbox("[optional] Document language", langs, index=lang_selected)
 
         scraibe.llm.purpose = st.text_input("[optional] Main purpose of this document", value=scraibe.llm.purpose, help="""
     Describe in detail what is the main goal of this document. For example:
@@ -58,7 +58,7 @@ def render_configure_AI(*args, **kwargs) -> None:
     - This is the README of a git repository containing a website based on streamlit to solve problem X
             """)
         
-        my_role = st.text_input("[optional] Your role in this document", value=scraibe.llm.my_role, help=""" 
+        scraibe.llm.role = st.text_input("[optional] Your role in this document", value=scraibe.llm.role, help=""" 
     Describe any specific role you can have in this document. E.g:
     
     - A seasoned DevOps engineer 
@@ -67,6 +67,13 @@ def render_configure_AI(*args, **kwargs) -> None:
             """)
         
         if st.form_submit_button("Submit"):
+            filename = app_docs.active_document()
+            docs = app_docs.load_documents()
+            docs["documents"][filename]["role"] = scraibe.llm.role
+            docs["documents"][filename]["purpose"] = scraibe.llm.purpose
+            docs["documents"][filename]["lang"] = scraibe.llm.lang
+            # st.write(docs["documents"][filename])
+            app_docs.save_documents(docs)
             st.info("Configuration saved")
         
 

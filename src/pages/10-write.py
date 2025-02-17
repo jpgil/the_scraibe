@@ -2,6 +2,7 @@ import os
 import time
 import streamlit as st
 import streamlit.components.v1 as components
+from streamlit_extras.stylable_container import stylable_container 
 from streamlit_quill import st_quill
 from src.st_include import app_utils
 from src.st_include import app_users
@@ -227,7 +228,7 @@ def render_AI_document_tools(*args, **kwargs):
         with tabs[i]:
             key = list(tablist.keys())[i]
             # st.subheader(key)
-            tablist[key](st_sidebar=st_sidebar, document_content=document_content)
+            tablist[key](st_sidebar=st_sidebar, document_content=document_content, document_meta=document_meta)
 
 
 
@@ -299,12 +300,19 @@ if __name__ == "__main__":
     if not app_users.can_view():
         app_utils.notify("Not authorized", switch="dashboard.py")
     
-    user_current = st.session_state.get("username")   
+    user_current = app_users.user()
 
     # All good, let's show it
     document_filename = app_docs.active_document()
+    document_meta = app_docs.filter_documents_for_user(user_current).get(document_filename)        
     document_content = scraibe.load_document(document_filename)
     document_sections = scraibe.list_sections(document_content)
+    
+    # Configure AI
+    # st.write(document_meta)
+    scraibe.llm.role = document_meta.get("role", scraibe.llm.role)
+    scraibe.llm.purpose = document_meta.get("purpose", scraibe.llm.purpose)
+    scraibe.llm.lang = document_meta.get("lang", scraibe.llm.lang)
             
     # Step 0: Sanity check
     # ---------
@@ -312,11 +320,107 @@ if __name__ == "__main__":
         document_sanity_check(document_content)
 
     editing_section_id = app_docs.editing_section_id()
+    
+    scraibe.llm.role = document_meta.get("role", scraibe.llm.role)
 
     # Display sections
     # --------
-    with st.expander(document_filename, expanded=True):
-        with st.container(border=False):
+            
+    with stylable_container(key="document_content", css_styles="""
+ {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    line-height: 1.6;
+    color: #24292e;
+    background-color: #FAFAFA;
+    margin: 20px 0;
+    padding: 1em;
+
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: 600;
+        line-height: 1.25;
+        margin-bottom: 16px;
+    }
+
+    h1 {
+        font-size: 2em;
+        border-bottom: 1px solid #e1e4e8;
+        padding-bottom: 0.3em;
+    }
+
+    h2 {
+        font-size: 1.5em;
+        border-bottom: 1px solid #e1e4e8;
+        padding-bottom: 0.3em;
+    }
+
+    h3 {
+        font-size: 1.25em;
+    }
+
+    h4 {
+        font-size: 1em;
+    }
+
+    ul, ol {
+        padding-left: 2em;
+    }
+
+    li {
+        margin-bottom: 4px;
+    }
+
+    pre {
+        background-color: #f6f8fa;
+        padding: 16px;
+        border-radius: 6px;
+        font-size: 85%;
+        overflow: auto;
+        line-height: 1.45;
+    }
+
+    code {
+        font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+        background-color: #f6f8fa;
+        padding: 3px 6px;
+        border-radius: 3px;
+        font-size: 85%;
+    }
+
+    blockquote {
+        color: #6a737d;
+        border-left: 4px solid #dfe2e5;
+        padding: 0 1em;
+        margin: 0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 16px;
+    }
+
+    th, td {
+        padding: 8px;
+        border: 1px solid #dfe2e5;
+    }
+
+    th {
+        background-color: #f6f8fa;
+        font-weight: 600;
+    }
+
+    a {
+        color: #0366d6;
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+}                           
+        """ ):
+        with st.expander(document_filename, expanded=True):
+
             for section_id in document_sections:
                 st.markdown(f'<div id="section{section_id}"></div>', unsafe_allow_html=True)
                 if editing_section_id == section_id:

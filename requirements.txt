@@ -1,6 +1,7 @@
 
 fastapi
 streamlit
+streamlit-extras
 pytest
 pyyaml
 langchain

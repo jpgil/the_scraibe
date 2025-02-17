@@ -1,30 +1,26 @@
 # Last changes for MVP
 
 ## Document Management
-- [ ] Add a "Last Edited" date to Your Documents.
-- [ ] When creating new documents, add prompts to:
-  - [ ] Ask about the document's topic.
-  - [ ] Suggest initial content as a draft.
-  - [ ] Ask for the document’s purpose.
-  - [ ] Ask for the user's role in the document.
-  - [ ] Ask for the document's language.
+- [X] When creating new documents, add prompts to:
+  - [X] Ask about the document's topic.
+  - [X] Suggest initial content as a draft.
+  - [X] Ask for the document’s purpose.
+  - [X] Ask for the user's role in the document.
+  - [X] Ask for the document's language.
 - [ ] Fully implement file uploads.
 - [ ] Infer title structure if the document is poorly formatted (e.g., when copying from a PDF).
-- [ ] Filter the document list to show only accessible documents.
-- [ ] Implement the "Request Access" feature.
-- [ ] Add a confirmation prompt when deleting a document.
+- [X] Filter the document list to show only accessible documents.
+- [X] Add a confirmation prompt when deleting a document.
 ## User Management
-- [ ] When adding a new user:
-  - [ ] Remove the role selection.
-  - [ ] Add fields for email and real name.
-  - [ ] Enable user creation for unregistered people.
-- [ ] Allow users to change their passwords.
+- [X] Remove the role selection.
+- [X] Enable user creation for unregistered people.
+- [X] Allow users to change their passwords.
   
 ## Write Page
 - [ ] Implement the three AI tools and remove the "Your Role" option.
-- [ ] Verify the speed of searching blocked sections.
+- [X] Verify the speed of searching blocked sections.
 - [ ] In general AI tools, replace "Questions" with "Chat with the document."
-- [ ] Allow saving AI configuration along with the document’s metadata.
+- [X] Allow saving AI configuration along with the document’s metadata.
 - [ ] Cleanup interface to show clearly the document area and the rest of interface. For example, render the document could have smaller font.
 
 ## AI Document Tools
@@ -61,6 +57,13 @@
   
 
 # Roadmap
+
+## Document Management
+- [ ] Add a "Last Edited" date to Your Documents.
+- [ ] Implement the "Request Access" feature.
+
+## User Management
+- [ ] Upgrade to Streamlit-Authenticator
 
 ## AI Document Tools
 - ...

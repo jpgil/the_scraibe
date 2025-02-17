@@ -35,6 +35,14 @@ def delete_user(username):
     """Delete a user from the system."""
     users = load_users()
     if username in users:
+
+        current_role = users[username].get("role", "user")
+        if current_role == "admin":
+            admin_users = [user for user, data in users.items() if data.get("role") == "admin"]
+            if len(admin_users) == 1:
+                app_utils.notify("Cannot delete user. At least one admin must remain.")
+                return
+
         del users[username]
         save_users(users)
         return True
@@ -43,9 +51,10 @@ def delete_user(username):
         return False
         st.error("User not found!")  # TODO: move outside
 
-def add_user(username, password, role="viewer"):
-    """Add a new user to the system (Admin only)."""
+def add_user(username, password, role="user"):
+    """Add a new user to the system."""
     users = load_users()
+    username = username.strip()
     
     if username in users:
         st.error("User already exists!")  # TODO: move outside
@@ -57,18 +66,33 @@ def add_user(username, password, role="viewer"):
         "last_login": None
     }
     
-    save_users(users)
-    app_utils.notify(f"User {username} created successfully.")
+    return save_users(users)
+    
 
 def update_role(username, new_role):
-    """Update a user's role."""
+    """Update a user's role with checks in place to ensure at least one admin remains."""
     users = load_users()
-    if username in users:
-        users[username]["role"] = new_role
-        save_users(users)
-        app_utils.notify(f"Role updated to {new_role} for {username}")
-    else:
-        st.error("User not found!")  # TODO: move outside
+    username = username.strip()
+
+    # Check if the user exists
+    if username not in users:
+        app_utils.notify("User not found!")
+        return
+
+    # Ensure at least one admin remains
+    current_role = users[username].get("role", "user")
+    if current_role == "admin":
+        admin_users = [user for user, data in users.items() if data.get("role") == "admin"]
+        if len(admin_users) == 1 and new_role != "admin":
+            app_utils.notify("Cannot change role. At least one admin must remain.")
+            return
+
+    # Update the user's role
+    users[username]["role"] = new_role
+    save_users(users)
+    app_utils.notify(f"Role updated to {new_role} for {username}")
+    return
+
 
 def update_password(username, new_password):
     """Update a user's password."""
@@ -128,7 +152,7 @@ def _can_do_X(allowed_actions):
     if not filename or not Im_logged_in():
         return False
 
-    user_current = st.session_state.get("username")
+    user_current = user()
 
     if not f"perm_for_{''.join(allowed_actions)}_{user_current}_{filename}" in st.session_state:
         document_meta = app_docs.filter_documents_for_user(user_current).get(filename)
@@ -187,19 +211,63 @@ def render_create_admin(user):
         do_login(username, password)
         # st.rerun()
 
+def render_create_user():
+    col1, col2 = st.columns(2)
+
+    with col1:
+        username = st.text_input("New Username", key="newuser")
+    with col2:
+        password = st.text_input("New Password", type="password", key="newpass")
+
+    role = "user"
+    if st.button("Create User"):
+        if add_user(username, password, role):
+            do_login(username, password)
+        else:
+            app_utils.notify("User creation failed")
+        st.rerun()
+
+def render_change_my_password():
+    """Allows users to change their own password."""
+    st.write("Change your password")
+
+    old_password = st.text_input("Old Password", type="password")
+    new_password = st.text_input("New Password", type="password")
+    confirm_password = st.text_input("Confirm New Password", type="password")
+
+    if st.button("Change Password"):
+        # Validation
+        if not old_password or not new_password or not confirm_password:
+            st.error("All fields are required.")  # Consistent error message usage
+            return
+
+        if new_password != confirm_password:
+            st.error("New passwords do not match.")
+            return
+
+        users = load_users()  # Load all users
+        username = st.session_state.get("username")
+
+        # Check old password
+        if username not in users or users[username]["password"] != hash_password(old_password):
+            st.error("Old password is incorrect.")  # Feedback for incorrect old password
+            return
+
+        # Update password if checks pass
+        update_password(username, new_password)
+        app_utils.notify("Password changed successfully.", switch="dashboard.py")
+
 def render_user_management():
     """Admin panel for managing users."""
     if st.session_state.get("role") != "admin":
         st.warning("You need admin access to manage users.")
         return
     
-    # st.header("Admin Management")
+    users = load_users()
 
     tab = st.tabs(["User List", "User Management", "Add User"])
-    
     with tab[0]:
 
-        users = load_users()
         
         if not users:
             st.write("No users found.")
@@ -217,20 +285,24 @@ def render_user_management():
         
         
     with tab[1]:
-        selected_user = st.selectbox("Selected user", ['[None]'] + user_list)
+        selected_user = st.selectbox("Selected user", [""] + user_list)
 
-        if selected_user != "[None]":
+        if selected_user != "":
             
             selected_user_data = users[selected_user]
             # st.write(selected_user_data)
 
             col1, col2, _ = st.columns([3, 3, 3])
             with col1:
+                if selected_user_data["role"] in ["user", "admin"]:
+                    role_index = ["user", "admin"].index(selected_user_data["role"])
+                else:
+                    role_index = 0
                 new_role = st.selectbox(
                     "Role", 
-                    ["viewer", "editor", "admin"],
+                    ["user", "admin"],
                     label_visibility='collapsed',
-                    index=["viewer", "editor", "admin"].index(selected_user_data["role"])
+                    index=role_index
                 )
             with col2:
                 if st.button("Update Role"):
@@ -263,7 +335,7 @@ def render_user_management():
         with col2:
             password = st.text_input("New Password", type="password", key="new_password")
         with col3:
-            role = st.selectbox("Role", ["viewer", "editor", "admin"], key="new_role")
+            role = st.selectbox("Role", ["user", "admin"], key="new_role")
         
         if st.button("Add User"):
             if username and password:

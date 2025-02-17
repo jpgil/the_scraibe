@@ -8,7 +8,7 @@ from src.st_include import app_users
 import src.core as scraibe
 
 #
-# TODO: remove st.* whenever possible
+# TODO: Split pure docs functions and streamlit frontend functions
 
 
 # YAML file for document metadata
@@ -30,7 +30,7 @@ def save_documents(documents):
         yaml.dump(documents, file)
     return True
 
-def add_document(filename, creator):
+def add_document(filename, creator, lang=None, purpose=None, role=None, document_content=""):
     """Add a new document. The creator is stored as the owner with fixed rights."""
     docs = load_documents()
     if not filename.endswith(".md"):
@@ -46,15 +46,29 @@ def add_document(filename, creator):
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "users": [{"name": creator, "permission": "creator", "display_name": creator}]
     }
+    docs["documents"][filename]["lang"] = lang
+    docs["documents"][filename]["purpose"] = purpose
+    docs["documents"][filename]["role"] = role
     
-    content = f"""
-# {filename.replace(".md", "")}
-Your content will be here
-"""
+    if document_content == "":
+        scraibe.llm.user_role = role
+        scraibe.llm.purpose = purpose
+        scraibe.llm.lang = lang
+        content = scraibe.llm.create_content(filename.replace('.md', ''))
+    #     if content == "":
+    #     content = f"""
+    # # {filename.replace(".md", "")}
+    # Your content will be here
+    # """
+    else:
+        content = document_content
+        if not content.startswith("#"):
+            content = f"# {filename.replace('.md', '')}\n\n" + content
+
     content = scraibe.add_section_markers(content)
     scraibe.save_document(filename, content)
     save_documents(docs)
-    # utils.notify(f"Document {filename} created successfully!")
+
     return os.path.basename(scraibe.get_filename_path(filename))
 
 def update_document_permission_for_user(filename, username, permission, display_name=None):
@@ -257,7 +271,7 @@ def render_document_upload():
         else:
             st.error("Filename and creator are required.")
 
-def render_document_create():
+def render_document_create(*args, **kwargs):
     st.subheader("Create New Document")
 
     with st.form(key=f'document_create', border=False):
@@ -282,13 +296,13 @@ def render_document_create():
     - Specialist in documentation formalisms 
         """)
         
-        document_content = st.text_area("[optional] Initial content of the document", height=150, help=""" 
+        document_content = st.text_area("[optional] Initial content of the document", value="", height=150, help=""" 
 If no content is provided, the scrAIbe will propose an initial content based on the document name and purpose.
         """)
         
         if st.form_submit_button("Create Document"):
             if filename and creator:
-                document_file = add_document(filename, creator)
+                document_file = add_document(filename, creator, lang, purpose, my_role, document_content)
                 if document_file:
                     set_active_document(document_file)
                     app_utils.notify(f"Document {document_file} created successfully!", switch="pages/10-write.py")
@@ -350,24 +364,25 @@ def render_document_management():
                         else:
                             st.error("You do not have permissions to manage this document.")
 
-    # Tab 4: Delete Document
+    # Tab 4: Delete Document 
     if "Delete Document" in tab_list:
         with tabs[tab_list.index("Delete Document")]:
             # st.header("Delete Document")
-            current_user = st.session_state.get("username")
+            current_user = app_users.user()
             filtered_docs = filter_documents_for_user(current_user)
             if not filtered_docs:
                 st.info("No documents available to delete.")
             else:
                 doc_to_delete = st.selectbox(label="Select Document to Delete", options=[""]+list(filtered_docs.keys()), key="doc_delete")
                 if doc_to_delete:
-                    if st.session_state.get("username") == filtered_docs[doc_to_delete]["creator"]:
+                    if current_user == filtered_docs[doc_to_delete]["creator"]:
                         if st.button(label="Delete Document"):
-                            docs = load_documents()["documents"]
-                            del docs[doc_to_delete]
-                            save_documents({"documents": docs})
-                            scraibe.delete_document(doc_to_delete)
-                            app_utils.notify(f"Document {doc_to_delete} deleted successfully!")
+                            def delete_doc():
+                                docs = load_documents()
+                                del docs["documents"][doc_to_delete]
+                                save_documents(docs)
+                                scraibe.delete_document(doc_to_delete)
+                            app_utils.confirm_action("Delete this document?", delete_doc)
                     else:
                         st.error("Only the creator can delete the document.")
 

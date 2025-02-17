@@ -15,6 +15,7 @@ def get_filename_path(filename: str, check_path=True):
     return normalized
 
 def load_document_nolabels(filename: str) -> str:
+    # sanitize filename
     content = load_document(filename)
     cleaned = re.sub(r'>>>>>ID#\d+_\d+|\n<<<<<ID#\d+_\d+', '', content)
     return cleaned
