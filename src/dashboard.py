@@ -37,9 +37,10 @@ if __name__ == "__main__":
             <div class="hero-container">
                 <div class="hero-text">
                     <div class="hero-tagline">the scrAIbe</div>
-                    <p class="hero-tagline">Precision Writing, Supercharged by AI</p>
-                    <p>the scrAIbe isn’t just a writing tool—it’s your AI-powered assistant for structured, multi-user collaboration. 
-                    From real-time refinement to deep content insights, every document benefits from the intelligence of modern AI.</p>
+                    <p class="hero-tagline">Markdown supercharged by AI</p>
+                    <p>the scrAIbe is your AI-powered assistant for structured, multi-user collaboration for Markdown documents. 
+                    Create or Upload, invite team members, ask the AI and start collaborating.
+                    </p>
                 </div>
             </div>
             """,
@@ -49,8 +50,7 @@ if __name__ == "__main__":
     if app_users.Im_logged_in():
 
         
-        current_user = st.session_state.get("username")
-        filtered_docs = list(app_docs.filter_documents_for_user(current_user))
+        filtered_docs = list(app_docs.filter_documents_for_user(app_users.user()))
         
         if filtered_docs:
             with st.expander("Your documents", expanded=True):
@@ -59,11 +59,15 @@ if __name__ == "__main__":
                     app_docs.set_active_document(selected_file)
                     st.switch_page("pages/10-write.py")
 
-        with st.expander("Create & Upload", expanded=not filtered_docs):
+        with st.expander("Create a Document", expanded=not filtered_docs):
             app_docs.render_document_create()
+
+        with st.expander("Upload a Document"):
             app_docs.render_document_upload()
 
-        with st.expander("Documents Dashboard"):    
+        with st.expander("Documents Dashboard"): 
+            # st.write("lala")  
+            # st.selectbox("lolo", [1,2,3]) 
             app_docs.render_document_management()
 
         if app_users.Im_admin():

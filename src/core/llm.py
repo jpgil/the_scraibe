@@ -182,14 +182,14 @@ The generated JSON is:
     def extract_content_assessment(self, document_content: str) -> dict:
         prompt = """
 Based on your role in the review of this document: "{role}"
-And the partial declared purpose of {purpose}
+And the partial declared purpose of "{purpose}"
 
 You will be provided a document in preparation. 
 
 1. Infer what type of document it is, inferring possible audience and distribution
 2. Infer the general purpose of this kind of documents
 3. Write a short paragraph on what the content of a document of this type should have
-4. Based on 1. and 2. and in my role of {role}, define 5 criterias to evaluate its content.
+4. Based on 1. and 2. and in my role of {role}, define 5 criterias to evaluate its content. Check also if text seems to be incomplete or missing.
 5. For each criteria, write a paragraph with one of [👌 achieved, 😐 partially achieved, 🔧 to be improved], followed by the assessment of the criteria
 6. For each criteria, write a paragraph with recommendations, howver if the assessment is overall positive then a "nothing to change" is a valid answer too.
 

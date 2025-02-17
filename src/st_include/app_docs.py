@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 import pandas as pd
 from src.st_include import app_utils
-import src.st_include.app_users as app_users
+from src.st_include import app_users
 import src.core as scraibe
 
 #
@@ -110,7 +110,8 @@ def remove_user_permission(filename, username):
     app_utils.notify(f"User {username} removed from document {filename}")
     return True
 
-def filter_documents_for_user(username):
+# @st.cache_data(ttl=5)
+def filter_documents_for_user(username, remove_cache=False):
     """Return a dictionary of documents for which the given username is listed."""
     all_docs = load_documents()["documents"]
     return {
@@ -156,15 +157,18 @@ def selected_section_id():
 #
 def render_document_list():
     """Display a table with existing documents and their metadata."""
-    docs = load_documents()["documents"]
+    allowed_docs = filter_documents_for_user(app_users.user())
+    docs = load_documents()["documents"] 
+    
     if not docs:
         st.info("No documents available.")
         return
 
     rows = []
     for doc, meta in docs.items():
-        user_list_str = ", ".join([f"{u['display_name']}({u['permission']})" for u in meta.get("users", [])])
-        rows.append({"Document": doc, "Creator": meta.get("creator", ""), "Created At": meta.get("created_at", ""), "Users": user_list_str})
+        if doc in allowed_docs:
+            user_list_str = ", ".join([f"{u['display_name']}({u['permission']})" for u in meta.get("users", [])])
+            rows.append({"Document": doc, "Creator": meta.get("creator", ""), "Created At": meta.get("created_at", ""), "Users": user_list_str})
 
     df = pd.DataFrame(rows)
     st.dataframe(df, hide_index=True, use_container_width=True)
@@ -255,27 +259,53 @@ def render_document_upload():
 
 def render_document_create():
     st.subheader("Create New Document")
-    filename = st.text_input(label="Document Filename (e.g., document01.md)", key="doc_filename")
-    creator = st.session_state.get("username", "")
-    if st.button(label="Create Document"):
-        if filename and creator:
-            document_file = add_document(filename, creator)
-            if document_file:
-                st.session_state["document_file"] = document_file
-                app_utils.notify(f"Document {document_file} created successfully!", switch="pages/10-write.py")
-        else:
-            st.error("Filename and creator are required.")
+
+    with st.form(key=f'document_create', border=False):
+        filename = st.text_input(label="Document Filename / Title", key="doc_filename", help=".md will be added at the end")
+        creator = st.session_state.get("username", "")
+        
+        langs = ["Inferred from the document", "English", "Español", "Français", "Deutsch"]
+        lang = st.selectbox("[optional] Document language", langs)
+
+        purpose = st.text_input("[optional] Main purpose of this document", value="Inferred from the document", help="""
+    Describe in detail what is the main goal of this document. For example:
+
+    - This is a technical document that propose team standards to implement CI/CD
+    - This is the README of a git repository containing a website based on streamlit to solve problem X
+        """)
+        
+        my_role = st.text_input("[optional] Your role in this document", value="Expert in the topic of the document", help=""" 
+    Describe any specific role you can have in this document. E.g:
+    
+    - A seasoned DevOps engineer 
+    - The manager who reviews the content
+    - Specialist in documentation formalisms 
+        """)
+        
+        document_content = st.text_area("[optional] Initial content of the document", height=150, help=""" 
+If no content is provided, the scrAIbe will propose an initial content based on the document name and purpose.
+        """)
+        
+        if st.form_submit_button("Create Document"):
+            if filename and creator:
+                document_file = add_document(filename, creator)
+                if document_file:
+                    set_active_document(document_file)
+                    app_utils.notify(f"Document {document_file} created successfully!", switch="pages/10-write.py")
+            else:
+                st.error("Filename and creator are required.")
             
 def render_document_management():
     """Render the document management dashboard."""
     # current_user = st.session_state["username"]
     user_role    = st.session_state["role"]
-    current_user = st.session_state.get("username")
+    current_user = app_users.user()
     filtered_docs = filter_documents_for_user(current_user)
 
     if user_role in ["editor", "admin"]:
         # tab_list = ["Document List", "Add Document", "Manage Permissions", "Delete Document"]
-        tab_list = ["Document List", "Request access", "Manage Permissions", "Delete Document"]
+        # tab_list = ["Document List", "Request access", "Manage Permissions", "Delete Document"]
+        tab_list = ["Document List", "Manage Permissions", "Delete Document"]
     else:
         tab_list = ["Document List"]
     tabs = st.tabs(tab_list)
@@ -286,11 +316,11 @@ def render_document_management():
             # st.header("Existing Documents")
             render_document_list()
 
-    # Tab 2: Add New Document
-    if "Add Document" in tab_list:
-        with tabs[tab_list.index("Add Document")]:
-            render_document_upload()
-            render_document_create()
+    # # Tab 2: Add New Document
+    # if "Add Document" in tab_list:
+    #     with tabs[tab_list.index("Add Document")]:
+    #         render_document_upload()
+    #         render_document_create()
 
     # Tab 3: Manage Permissions
     if "Manage Permissions" in tab_list:
@@ -341,21 +371,21 @@ def render_document_management():
                     else:
                         st.error("Only the creator can delete the document.")
 
-    if "Request access" in tab_list:
-        with tabs[tab_list.index("Request access")]:
-            st.warning("Feature not implemented yet")
+    # if "Request access" in tab_list:
+    #     with tabs[tab_list.index("Request access")]:
+    #         st.warning("Feature not implemented yet")
 
-            if not filtered_docs:
-                st.info("No documents to manage.")
-            else:
-                col1, col2 = st.columns([3,1])
-                with col1:
-                    doc_to_manage = st.selectbox("Request access to", [""] + list(filtered_docs.keys()), key="doc_access")
-                with col2:
-                    role = st.selectbox("As role", ["", "viewer", "editor"])
+    #         if not filtered_docs:
+    #             st.info("No documents to manage.")
+    #         else:
+    #             col1, col2 = st.columns([3,1])
+    #             with col1:
+    #                 doc_to_manage = st.selectbox("Request access to", [""] + list(filtered_docs.keys()), key="doc_access")
+    #             with col2:
+    #                 role = st.selectbox("As role", ["", "viewer", "editor"])
                 
-                if doc_to_manage and role:
-                    if filtered_docs[doc_to_manage].get('creator') == st.session_state['username']:
-                        st.info
-                    if st.button(f"Request access to {filtered_docs[doc_to_manage].get('creator')}"):
-                        st.error("As I said, not implement yet!")
+    #             if doc_to_manage and role:
+    #                 if filtered_docs[doc_to_manage].get('creator') == st.session_state['username']:
+    #                     st.info
+    #                 if st.button(f"Request access to {filtered_docs[doc_to_manage].get('creator')}"):
+    #                     st.error("As I said, not implement yet!")

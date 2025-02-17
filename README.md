@@ -51,19 +51,19 @@ streamlit run src/dashboard.py --server.port 8501
 To execute all tests:
 
 ```sh
-pytest
+python -m pytest
 ```
 
 To run a specific test file:
 
 ```sh
-pytest -s tests/test_locks.py
+python -m pytest -s tests/test_locks.py
 ```
 
 To run a specific test case:
 
 ```sh
-pytest -s tests/test_locks.py -k test_01_lock_section
+python -m pytest -s tests/test_locks.py -k test_01_lock_section
 ```
 
 ---

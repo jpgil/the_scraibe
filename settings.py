@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     # Choose the LLM provider: "openai" or "gemini"
     llm_provider: str = "openai"
     
-    llm_model: str = "gpt-4o-mini"
+    llm_model: str = "gpt-4o"
 
     class Config:
         # Loads variables from a .env file in the current directory

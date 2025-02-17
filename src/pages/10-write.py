@@ -22,12 +22,15 @@ def document_sanity_check(document_content):
         scraibe.save_document(document_filename, document_content)
         app_utils.notify("Markdown was repaired")
 
+# @st.cache_data(ttl=2)
+def is_section_locked(document_filename, section_id):
+    return scraibe.is_section_locked(document_filename, section_id)
 
 def render_view_section(document_filename, document_content, section_id, user_current):
     global st_sidebar
     active_id = app_docs.editing_section_id()
     
-    cols = st.columns([8, 1])
+    cols = st.columns([9, 1])
     
     # The content
     # -------
@@ -42,8 +45,8 @@ def render_view_section(document_filename, document_content, section_id, user_cu
     # Action buttons
     # ----------
     with cols[1]:
-        with st.container(border=True):
-            lock_user = scraibe.is_section_locked(document_filename, section_id)
+        with st.container(border=False):
+            lock_user = is_section_locked(document_filename, section_id)
 
             # Display locked status or unlock if the current user is the locker.
             if lock_user:
@@ -55,7 +58,7 @@ def render_view_section(document_filename, document_content, section_id, user_cu
                     st_sidebar.markdown(f'⚠ ```Also editing: {lock_user}```')
             else:
                 # Edit button
-                if app_users.can_edit() and st.button(":feather:", key=f"edit_{section_id}", use_container_width=True):
+                if app_users.can_edit() and st.button(":feather:", key=f"edit_{section_id}", type="secondary", use_container_width=False):
                         app_docs.set_editing_section_id(section_id)
                         # app_docs.set_selexcted_section_id(section_id)
                         st.rerun()
@@ -63,12 +66,12 @@ def render_view_section(document_filename, document_content, section_id, user_cu
                 # Tools button
                 selected_id = app_docs.selected_section_id()
                 is_selected = selected_id == section_id
-                if st.button("☑️" if is_selected else "⬜", key=f"select_id_{section_id}"):
+                if st.button("☑️" if is_selected else "⬜", key=f"select_id_{section_id}", type="secondary"):
                     new_selected_id = None if is_selected else section_id
                     app_docs.set_selected_section_id(new_selected_id)
 
 
-def render_edit_section(document_filename, document_content, active_id, user_current):
+def render_edit_section(document_filename, document_content, active_id, user_current, sidebar):
     if not app_users.can_edit():
         return
 
@@ -161,8 +164,10 @@ def render_edit_section(document_filename, document_content, active_id, user_cur
         }        </script>"""
         time.sleep(0.1)
         components.html(js_code, height=0)
-    app_utils.run_at_bottom(quill_js)
-
+        # st.write("Agregado")
+    # app_utils.run_at_bottom(quill_js)
+    # with st_sidebar:
+    quill_js()
 
 def render_selected_section(document_content):
     global st_sidebar
@@ -315,7 +320,7 @@ if __name__ == "__main__":
             for section_id in document_sections:
                 st.markdown(f'<div id="section{section_id}"></div>', unsafe_allow_html=True)
                 if editing_section_id == section_id:
-                    render_edit_section(document_filename, document_content, section_id, user_current)
+                    render_edit_section(document_filename, document_content, section_id, user_current, st_sidebar)
                 else:
                     render_view_section(document_filename, document_content, section_id, user_current)
 
@@ -329,4 +334,7 @@ if __name__ == "__main__":
     render_selected_section(document_content)
 
 
-    app_utils.render_bottom_page()
+    # app_utils.render_bottom_page()
+    
+    
+    

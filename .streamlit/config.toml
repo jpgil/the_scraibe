@@ -1,7 +1,7 @@
 [theme]
 base="light"
-secondaryBackgroundColor="#f5f0f0"
-textColor="#51535f"
+secondaryBackgroundColor="#e4dfdf"
+textColor="#312e2d"
 font="sans serif"
 
 [runner]
@@ -11,7 +11,7 @@ font="sans serif"
 # apps that mutate session_state data outside of explicit session_state
 # assignment statements.
 # Default: true
-fastReruns = false
+fastReruns = true
 
 [client]
 #toolbarMode = "minimal"

@@ -1,7 +1,7 @@
 # Last changes for MVP
 
 ## Document Management
-- [ ] Add a "Last Edited" date to documents.
+- [ ] Add a "Last Edited" date to Your Documents.
 - [ ] When creating new documents, add prompts to:
   - [ ] Ask about the document's topic.
   - [ ] Suggest initial content as a draft.
@@ -25,6 +25,10 @@
 - [ ] Verify the speed of searching blocked sections.
 - [ ] In general AI tools, replace "Questions" with "Chat with the document."
 - [ ] Allow saving AI configuration along with the document’s metadata.
+- [ ] Cleanup interface to show clearly the document area and the rest of interface. For example, render the document could have smaller font.
+
+## AI Document Tools
+- [ ] Infer headings and subheadings from the document.
 
 # 📂 Repository Setup on GitHub
 - [ ] Create a new GitHub repository (or use an existing one).
@@ -44,3 +48,19 @@
 - [ ] Ensure `streamlit` is listed in `requirements.txt`.
 - [ ] Create a **Streamlit app** (e.g., `app.py`).
 - [ ] Test the app locally
+  
+
+# Tips and Tricks
+
+- Custom CSS for containers: https://discuss.streamlit.io/t/applying-custom-css-to-manually-created-containers/33428/11
+- Auth https://github.com/mkhorasani/Streamlit-Authenticator
+- https://arnaudmiribel.github.io/streamlit-extras/extras/stylable_container/
+- https://github.com/Mohamed-512/Extra-Streamlit-Components for Cookies
+- https://github.com/null-jones/streamlit-plotly-events 
+- https://github.com/Schluca/streamlit_tree_select
+  
+
+# Roadmap
+
+## AI Document Tools
+- ...

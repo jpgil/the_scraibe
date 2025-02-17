@@ -10,10 +10,10 @@ import yaml
 import os
 import hashlib
 
-ph = None
+# ph = None
 def render_sidebar(pagefilename):
     """Sidebar for login/logout and user actions."""         
-    global ph
+    # global ph
     st.set_page_config(layout="wide", page_title="the scrAIbe")
 
     # Show notifications with notify(msg)
@@ -29,9 +29,9 @@ def render_sidebar(pagefilename):
         else:
             app_users.render_user_loggedin()
             
-        return st_sidebar
             
-    ph = st.sidebar.container()
+    # ph = st.sidebar.container()
+    return st_sidebar
                     
 def notify(msg, switch=False):
     if 'notify_channel' not in st.session_state:
