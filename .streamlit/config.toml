@@ -1,8 +1,11 @@
 [theme]
 base="light"
+backgroundColor="#ffffff"
 secondaryBackgroundColor="#e4dfdf"
 textColor="#312e2d"
 font="sans serif"
+
+
 
 [runner]
 # Handle script rerun requests immediately, rather than waiting for script

@@ -80,7 +80,7 @@ def render_configure_AI(*args, **kwargs) -> None:
 def render_review_grammar(*args, **kwargs) -> None:
     filename = app_docs.active_document()
     document_content = kwargs['document_content']
-    if st.button("Review Grammar and Sintaxis"):
+    if st.button("Review Grammar and Spelling"):
         with st.spinner("Let AI think ..."):
             json_result = scraibe.llm.review_grammar(document_content)#llm_grammar(content)
         set_ai_result('grammar', json_result)
@@ -131,12 +131,25 @@ def render_content_assessment(*args, **kwargs) -> None:
     # st.write(criteria)
     if len(criteria):
         st.markdown("### Summary")
-        st.markdown(f"**Type of document**: {criteria['type_of_document']}")
-        st.markdown(f"**Purpose**: {criteria['purpose']}")
-        st.markdown(f"**Expected content**: {criteria['expected_content']}")
+        
+        st.markdown("""
+| Category | Content |
+| --- | --- |
+| Type of document | {type_of_document} |
+| Purpose | {purpose} |
+| Expected content | {expected_content} |
+                    """.format(**criteria))
+
+        st.markdown("### Evaluation")
+        tdata = { "Criteria": [], "Score": []}
+        tdata["Criteria"] = criteria['criteria']
+        tdata["Score"] = [ c.split(":")[0] for c in criteria['assessment']]
+        st.dataframe(tdata, hide_index=True, use_container_width=False)
+
+        st.markdown("### Recommendations")
         for i in range(5):
             try:
-                st.markdown(f"### {criteria['criteria'][i]}")
+                st.markdown(f"#### {criteria['criteria'][i]}")
                 st.markdown(criteria['assessment'][i])
                 st.markdown(f"*{criteria['recommendations'][i]}*")
             except:

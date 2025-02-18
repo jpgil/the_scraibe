@@ -8,6 +8,7 @@ from src.st_include import app_utils
 from src.st_include import app_users
 from src.st_include import app_docs
 from src.st_include import app_ai
+from settings import settings
 
 import src.core as scraibe
 import markdownify
@@ -59,7 +60,7 @@ def render_view_section(document_filename, document_content, section_id, user_cu
                     st_sidebar.markdown(f'⚠ ```Also editing: {lock_user}```')
             else:
                 # Edit button
-                if app_users.can_edit() and st.button(":feather:", key=f"edit_{section_id}", type="secondary", use_container_width=False):
+                if app_users.can_edit() and st.button("✍️", key=f"edit_{section_id}", type="secondary", use_container_width=False):
                         app_docs.set_editing_section_id(section_id)
                         # app_docs.set_selexcted_section_id(section_id)
                         st.rerun()
@@ -173,19 +174,19 @@ def render_edit_section(document_filename, document_content, active_id, user_cur
 def render_selected_section(document_content):
     global st_sidebar
     section_id = app_docs.selected_section_id()
+    document_filename = app_docs.active_document()
+    
     if not section_id:
         return
     try:
-        first_line = scraibe.extract_section(document_content, section_id).replace("#", "").splitlines()[0]
+        section_content = scraibe.extract_section(document_content, section_id)
+        first_line = section_content.replace("#", "").splitlines()[0]
     except:
         app_docs.set_selected_section_id(False)
         st.rerun()
 
     with st_sidebar:
-        st.markdown(f"""
-```
-{first_line}
-                    """)        
+        st.code(first_line, language=None, wrap_lines=True)
         cols = st.columns([1,1])
         document_sections = scraibe.list_sections(document_content)
         if cols[0].button("☑️ Unselect", key=f"unselect2_{section_id}", use_container_width=True):
@@ -199,12 +200,25 @@ def render_selected_section(document_content):
                         scraibe.delete_section, 
                         document_filename, section_id, user_current)
         
-        AI_section_toolslist = ['Analyse content', 'Suggest content', 'Versions', 'Your role']
-        cols = st.columns([3,1])
-        selected_AI_section_toolslist = cols[0].selectbox('AI section', AI_section_toolslist, label_visibility="collapsed")
-        if cols[1].button("💡 AI"):
-            st.write(f"Your selected AI tool is {AI_section_toolslist}.\n Here we will write the output of the tool.")
-                    
+        AI_section_toolslist = ['', 'Analyse in context', 'Suggest content']
+        cols = st.columns([4,1])
+        AI_task = cols[0].selectbox('AI section', AI_section_toolslist, label_visibility="collapsed", key=f"AI_section_{section_id}")
+        if cols[1].button("💡"):
+            if AI_task == 'Analyse in context':
+                result = scraibe.llm.analyse_section_in_context(document_content, section_content)
+                scraibe.llm.remember(AI_task, section_id, document_filename, result)
+            elif AI_task == 'Suggest content':
+                result = scraibe.llm.suggest_section_content(document_content, section_content)
+                scraibe.llm.remember(AI_task, section_id, document_filename, result)
+        
+        if AI_task != '':
+            with st.container():
+                result = scraibe.llm.remember(AI_task, section_id, document_filename)
+                if not result:
+                    st.write("Press 💡 to execute")
+                else:
+                    st.write(result)
+                
     st_sidebar.markdown("---")
     
 
@@ -334,7 +348,7 @@ if __name__ == "__main__":
     background-color: #FAFAFA;
     margin: 20px 0;
     padding: 1em;
-
+        
     h1, h2, h3, h4, h5, h6 {
         font-weight: 600;
         line-height: 1.25;

@@ -32,13 +32,13 @@ def save_document(filename: str, content: str, verbose = False):
     # raise( UserWarning(content) )
     lbl1 = add_section_markers(content)
     lbl1 = repair_markdown_syntax(lbl1)
-    if lbl1 != content:
-        print(f'Changes detected: ')
-        print(f'Original = {content}')
-        print(f'Repaired = {lbl1}')
+    # if lbl1 != content:
+    #     print(f'Changes detected: ')
+    #     print(f'Original = {content}')
+    #     print(f'Repaired = {lbl1}')
     valid, msg = validate_markdown_syntax(lbl1)
     if not valid:
-        print(msg)
+        # print(msg)
         raise(f"The document {filename} has bad sintaxis, fix it manually")
 
     filename = get_filename_path(filename, check_path=False)

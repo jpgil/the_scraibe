@@ -5,6 +5,7 @@ from datetime import datetime
 import pandas as pd
 from src.st_include import app_utils
 from src.st_include import app_users
+from src.st_include import app_ai
 import src.core as scraibe
 
 #
@@ -261,15 +262,53 @@ def render_manage_permissions_for_editor(doc_to_manage, doc_meta, current_user):
 
 def render_document_upload():
     st.subheader("Upload Document")
-    filename = st.file_uploader(label="Document Filename (e.g., document01.md)", key="upload_doc_filename")
-    creator = st.session_state.get("username", "")
-    if st.button(label="Upload Document"):
-        if filename and creator:
-            st.error("Not implemented yet")
-            # if documents.add_document(filename, creator):
-            #     utils.notify(f"Document {filename} created successfully!", switch="pages/01-documents.py")
-        else:
-            st.error("Filename and creator are required.")
+    with st.form(key=f'document_upload', border=False):
+        st.file_uploader(label="Document Filename (e.g., document01.md)", type=['md', 'txt', 'pdf'], key='file_upload_widget')
+        creator = st.session_state.get("username", "")
+        
+        file = st.session_state.file_upload_widget
+        if file is not None:
+            st.write(f"Uploading {file.name}...")
+            if file.name.endswith(".pdf"):
+                text = scraibe.extract_markdown_from_pdf(file)
+                text = scraibe.llm.infer_markdown_from_pdf(text)
+                filename = file.name.replace(".pdf", ".md")
+            else:
+                text = file.getvalue().decode("utf-8")
+                filename = file.name if file.name.endswith(".md") else file.name + ".md"
+
+            # st.write(f"Uploaded {file.name}.")
+            # st.write(f"Creator: {creator}")
+            # st.code(text)  # Show preview of extracted text
+            
+            # st.stop()
+
+        langs = ["Inferred from the document", "English", "Español", "Français", "Deutsch"]
+        lang = st.selectbox("[optional] Document language", langs)
+
+        purpose = st.text_input("[optional] Main purpose of this document", value="Inferred from the document", help="""
+    Describe in detail what is the main goal of this document. For example:
+
+    - This is a technical document that propose team standards to implement CI/CD
+    - This is the README of a git repository containing a website based on streamlit to solve problem X
+        """)
+        
+        role = st.text_input("[optional] Your role in this document", value="Expert in the topic of the document", help=""" 
+    Describe any specific role you can have in this document. E.g:
+    
+    - A seasoned DevOps engineer 
+    - The manager who reviews the content
+    - Specialist in documentation formalisms 
+        """)
+        
+        if st.form_submit_button("Upload Document"):
+            if filename and creator:
+                document_file = add_document(filename, creator, lang, purpose, role, text)
+                if document_file:
+                    set_active_document(document_file)
+                    app_utils.notify(f"Document {document_file} created successfully!", switch="pages/10-write.py")
+            else:
+                st.error("Filename and creator are required.")
 
 def render_document_create(*args, **kwargs):
     st.subheader("Create New Document")
@@ -288,7 +327,7 @@ def render_document_create(*args, **kwargs):
     - This is the README of a git repository containing a website based on streamlit to solve problem X
         """)
         
-        my_role = st.text_input("[optional] Your role in this document", value="Expert in the topic of the document", help=""" 
+        role = st.text_input("[optional] Your role in this document", value="Expert in the topic of the document", help=""" 
     Describe any specific role you can have in this document. E.g:
     
     - A seasoned DevOps engineer 
@@ -302,7 +341,7 @@ If no content is provided, the scrAIbe will propose an initial content based on 
         
         if st.form_submit_button("Create Document"):
             if filename and creator:
-                document_file = add_document(filename, creator, lang, purpose, my_role, document_content)
+                document_file = add_document(filename, creator, lang, purpose, role, document_content)
                 if document_file:
                     set_active_document(document_file)
                     app_utils.notify(f"Document {document_file} created successfully!", switch="pages/10-write.py")

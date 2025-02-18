@@ -16,6 +16,8 @@ markdownify
 markdown_pdf
 linkify-it-py
 markdown-it-py[linkify,plugins]
+pdfplumber
+tabulate
 
 streamlit-quill
 -e .

@@ -7,8 +7,8 @@
   - [X] Ask for the document’s purpose.
   - [X] Ask for the user's role in the document.
   - [X] Ask for the document's language.
-- [ ] Fully implement file uploads.
-- [ ] Infer title structure if the document is poorly formatted (e.g., when copying from a PDF).
+- [X] Fully implement file uploads.
+- [X] Infer title structure if the document is poorly formatted (e.g., when copying from a PDF).
 - [X] Filter the document list to show only accessible documents.
 - [X] Add a confirmation prompt when deleting a document.
 ## User Management
@@ -17,11 +17,11 @@
 - [X] Allow users to change their passwords.
   
 ## Write Page
-- [ ] Implement the three AI tools and remove the "Your Role" option.
+- [X] Implement the three AI tools and remove the "Your Role" option.
 - [X] Verify the speed of searching blocked sections.
-- [ ] In general AI tools, replace "Questions" with "Chat with the document."
+- [X] In general AI tools, replace "Questions" with "Chat with the document."
 - [X] Allow saving AI configuration along with the document’s metadata.
-- [ ] Cleanup interface to show clearly the document area and the rest of interface. For example, render the document could have smaller font.
+- [X] Cleanup interface to show clearly the document area and the rest of interface. For example, render the document could have smaller font.
 
 ## AI Document Tools
 - [ ] Infer headings and subheadings from the document.
@@ -39,11 +39,6 @@
 - [ ] Add a **requirements.txt** or **pyproject.toml** for dependencies.
 - [ ] Configure **GitHub Actions** (optional, for CI/CD).
 - [ ] Push the repository to GitHub.
-
-# 🚀 Preparing for Streamlit Deployment
-- [ ] Ensure `streamlit` is listed in `requirements.txt`.
-- [ ] Create a **Streamlit app** (e.g., `app.py`).
-- [ ] Test the app locally
   
 
 # Tips and Tricks
@@ -61,6 +56,10 @@
 ## Document Management
 - [ ] Add a "Last Edited" date to Your Documents.
 - [ ] Implement the "Request Access" feature.
+
+## Markdown
+- [ ] Support tables
+- [ ] Merge sections without title.
 
 ## User Management
 - [ ] Upgrade to Streamlit-Authenticator

@@ -1,13 +1,14 @@
-from pydantic_settings import BaseSettings # NEW
-#
+from pydantic_settings import BaseSettings
+
 class Settings(BaseSettings):
-    # Private keys for LLM providers
     openai_api_key: str = ""
-    gemini_api_key: str = ""
+
+    azure_openai_api_endpoint: str = ""
+    azure_openai_api_key: str = ""
+    azure_openai_deployment_name: str = ""
+    azure_openai_api_version: str = ""
     
-    # Choose the LLM provider: "openai" or "gemini"
     llm_provider: str = "openai"
-    
     llm_model: str = "gpt-4o"
 
     class Config:
