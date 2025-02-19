@@ -40,7 +40,7 @@
 ```
 4. **Run the app:**
 
-    streamlit run src/dashboard.py
+    python -m streamlit run src/dashboard.py
 
 ## Running Tests
 To execute all tests:
