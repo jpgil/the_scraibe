@@ -1,53 +1,47 @@
-# the scrAIbe: AI-Assisted Writing for Teams
+# the scrAIbe
 
-**the scrAIbe** is an AI-driven writing and collaboration platform designed to streamline the creation of lengthy, complex documents. Built entirely on Markdown, it integrates intelligent editing, dynamic document structuring, precise version tracking, and asynchronous multi-user collaboration.
+<p align="center">
+  <img src="images/the_scribe-300.png" alt="the scrAIbe">
+</p>
 
-## 🚀 Features
+**the scrAIbe** is a prototype AI-driven writing and collaboration tool based on pure Markdown. It offers intelligent editing, dynamic structuring, version control, and asynchronous multi-user collaboration.
 
-- **AI-Assisted Editing**: Context-aware editing options such as Expand, Shorten, Bulletize, Coherence Check, Writing Profile, and Equalize.
-- **Dynamic Document Structure**: Pure Markdown-based structure with easy export to formats such as Word and PDF.
-- **Smart Change Tracking & Version Control**: Unique section IDs and robust versioning to maintain history and enable rollbacks.
-- **Asynchronous Multi-User Collaboration**: Section-locking system with granular read/write permissions.
-- **Lightweight Deployment**: No installation required—clone and run.
+*Note that this is a prototype and not a production-ready application.*
 
----
+## Key Features
 
-## 🛠 Local Installation
+- **AI-Assisted Editing**: Content Assessment, Coherence Check, and more.
+- **Markdown-Based**: Pure Markdown structure with export options (Word, PDF).
+- **Version Control**: Unique section IDs and rollback support (to be implemented)
+- **Multi-User Collaboration**: Asynchronous editing with section locking.
+- **Lightweight Setup**: Clone and run with Streamlit—no installation headaches.
 
-To set up the environment locally, run:
 
-```sh
-python -m venv venv
-source venv/bin/activate
-python -m pip install --upgrade pip wheel
-pip install -r requirements.txt
-```
+## Getting Started
 
-To start the Streamlit dashboard:
+1. **Clone the repo**:
 
-```sh
-python -m streamlit run src/dashboard.py
-```
+   git clone https://github.com/yourusername/the-scrAIbe.git
+   cd the-scrAIbe
 
-## GUI Deployment (Streamlit on Servers)
-
-1. Ensure **Streamlit** is installed on your server.
-2. Set up a virtual environment and install dependencies.
-3. Run the Streamlit app on a server port:
+2. **Set up the environment:**
 
 ```sh
-streamlit run src/dashboard.py --server.port 8501
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
 ```
 
-4. If deploying with **Streamlit Cloud**:
-- Push the project to **GitHub**.
-- Connect it to **Streamlit Cloud**.
-- Set the main script (`src/dashboard.py`) and deploy.
+3. **Write you LLM API key in the .env file:**
+```sh
+    cp .env-default .env
+    nano .env
+```
+4. **Run the app:**
 
----
+    streamlit run src/dashboard.py
 
-## ✅ Running Tests
-
+## Running Tests
 To execute all tests:
 
 ```sh
@@ -66,45 +60,21 @@ To run a specific test case:
 python -m pytest -s tests/test_locks.py -k test_01_lock_section
 ```
 
----
+## Contributing
 
-## 🤝 Contribute
+1. Fork the repo and clone it locally.
+2. Create a feature branch:
+   ```git checkout -b feature-branch```
+3. Commit your changes and open a PR.
 
-We welcome contributions! Follow these steps:
+## License
+Licensed under the MIT License.
 
-1. **Fork the repository** on GitHub.
-2. **Clone your fork**:
 
-```sh
-git clone https://github.com/yourusername/the-scrAIbe.git
-cd the-scrAIbe
-```
 
-3. **Create a feature branch**:
 
-```sh
-git checkout -b feature-branch
-```
 
-4. **Make changes & commit**:
 
-```sh
-git add .
-git commit -m "Added new feature"
-```
 
-5. **Push changes & submit a PR**: Then open a Pull Request on GitHub.
 
-```sh
-git push origin feature-branch
-```
 
----
-
-## 📜 License
-
-This project is licensed under the **MIT License**. See the LICENSE file for details.
-
----
-
-🚀 **the scrAIbe** is designed to accelerate document creation while maintaining clarity, traceability, and ease of use for both technical and non-technical stakeholders. Happy writing!
