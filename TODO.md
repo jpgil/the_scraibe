@@ -23,22 +23,20 @@
 - [X] Allow saving AI configuration along with the document’s metadata.
 - [X] Cleanup interface to show clearly the document area and the rest of interface. For example, render the document could have smaller font.
 
-## AI Document Tools
-- [ ] Infer headings and subheadings from the document.
 
 # 📂 Repository Setup on GitHub
-- [ ] Create a new GitHub repository (or use an existing one).
-- [ ] Add a **README.md** with:
+- [X] Create a new GitHub repository (or use an existing one).
+- [X] Add a **README.md** with:
   - Project description.
   - Installation instructions.
   - Usage examples.
   - Contribution guidelines.
   - Contact information.
-- [ ] Add a **LICENSE** file (MIT recommended).
+- [X] Add a **LICENSE** file (MIT recommended).
 - [X] Add a **.gitignore** file to exclude unnecessary files (e.g., `__pycache__/`, `.venv/`, `*.log`).
-- [ ] Add a **requirements.txt** or **pyproject.toml** for dependencies.
+- [X] Add a **requirements.txt** or **pyproject.toml** for dependencies.
 - [ ] Configure **GitHub Actions** (optional, for CI/CD).
-- [ ] Push the repository to GitHub.
+- [X] Push the repository to GitHub.
   
 
 # Tips and Tricks
@@ -65,4 +63,5 @@
 - [ ] Upgrade to Streamlit-Authenticator
 
 ## AI Document Tools
-- ...
+- [ ] Infer headings and subheadings from the document.
+- [ ] Compare with uploaded Markdown
