@@ -200,7 +200,7 @@ def render_user_loggedout():
 
             
 
-def render_create_admin(user):
+def render_create_admin():
     st.warning("No users found. Please create an initial admin user.")
     username = st.text_input("New Username", key="newuser2")
     password = st.text_input("New Password", type="password", key="newpass2")
