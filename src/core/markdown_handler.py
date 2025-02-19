@@ -41,7 +41,9 @@ def save_document(filename: str, content: str, verbose = False):
         # print(msg)
         raise(f"The document {filename} has bad sintaxis, fix it manually")
 
+    os.makedirs( os.path.join(DOCUMENT_PATH), exist_ok=True)
     filename = get_filename_path(filename, check_path=False)
+    
     try:
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(lbl1)
