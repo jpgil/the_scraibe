@@ -9,7 +9,7 @@ def set_ai_result(category, json) -> None:
     filename = app_docs.active_document()
     st.session_state[f'ai_{filename}_{category}'] = json
 
-def ai_result(category) -> list | dict:
+def ai_result(category) -> list:
     filename = app_docs.active_document()
     result = st.session_state.get(f'ai_{filename}_{category}', [])
     return result
